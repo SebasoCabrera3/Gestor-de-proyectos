@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bienvenidos – Gestor de Proyectos</title>
+
+  <!-- Google Fonts: Montserrat -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Estilos Internos -->
+  <style>
+    /* — Reset básico y variables de color — */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    :root {
+      --font-base: 'Montserrat', sans-serif;
+      --color-background: #0d1117;
+      --color-overlay: rgb(7 22 41 / 85%);
+      --color-dark-blue: #001f3f;
+      --color-white: #ffffff;
+      --transition-fast: 0.3s ease-in-out;
+      --transition-slow: 1.2s ease;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-base);
+      background: url('{{ url_for("static", filename="images/deep-space-overlay.jpg") }}')
+                  center/cover no-repeat fixed;
+      background-color: var(--color-background);
+    }
+
+    /* — Capa de oscurecimiento ligeramente transparente — */
+    #dark-overlay {
+      position: absolute;
+      inset: 0;
+      background-color: var(--color-overlay);
+      opacity: 1;
+      transition: opacity var(--transition-slow);
+      z-index: 1;
+    }
+    #dark-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* — Contenedor principal de la landing — */
+    #landing-wrapper {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity var(--transition-slow) 0.5s;
+    }
+    #landing-wrapper.visible {
+      opacity: 1;
+    }
+
+    /* — Logo con animación sutil — */
+    .logo {
+      width: 260px;
+      animation: pulse-logo 3s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 10px var(--color-dark-blue));
+      margin-bottom: 1.5rem;
+    }
+    @keyframes pulse-logo {
+      from {
+        transform: scale(1);
+      }
+      to {
+        transform: scale(1.03);
+      }
+    }
+
+    /* — Título en blanco con contorno usando text-shadow en varias direcciones — */
+    .landing-title {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--color-white);
+      /* Sombras alrededor: arriba-izq, arriba-der, abajo-izq, abajo-der */
+      text-shadow:
+        -2px -2px 0 var(--color-dark-blue),
+        2px -2px 0 var(--color-dark-blue),
+        -2px 2px 0 var(--color-dark-blue),
+        2px 2px 0 var(--color-dark-blue);
+      margin-bottom: 0.8rem;
+      opacity: 0;
+      animation: fade-in 1.2s ease-out forwards;
+    }
+
+    /* — Subtítulo en blanco con contorno sutil también mediante text-shadow — */
+    .landing-subtitle {
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--color-white);
+      text-shadow:
+        -1px -1px 0 var(--color-dark-blue),
+        1px -1px 0 var(--color-dark-blue),
+        -1px 1px 0 var(--color-dark-blue),
+        1px 1px 0 var(--color-dark-blue);
+      margin-bottom: 1.8rem;
+      opacity: 0;
+      animation: fade-up 1.2s ease-out forwards;
+      animation-delay: 0.3s;
+    }
+
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* — Botón “Gestionar” blanco con borde azul oscuro y fondo semitransparente — */
+    .landing-button {
+      position: relative;
+      display: inline-block;
+      padding: 0.7rem 2.2rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--color-white);
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 2px solid var(--color-dark-blue);
+      border-radius: 30px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform var(--transition-fast),
+                  box-shadow var(--transition-fast),
+                  background-color var(--transition-fast);
+      z-index: 3;
+    }
+    .landing-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 12px var(--color-dark-blue);
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    .landing-button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+      z-index: 1;
+    }
+    .landing-button:active::after {
+      width: 160px;
+      height: 160px;
+      opacity: 0;
+      transition: 0s;
+    }
+
+    /* — Splash inicial “Bienvenidos” en blanco con contorno — */
+    #splash-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: var(--color-white);
+      text-shadow:
+        -2px -2px 0 var(--color-dark-blue),
+        2px -2px 0 var(--color-dark-blue),
+        -2px 2px 0 var(--color-dark-blue),
+        2px 2px 0 var(--color-dark-blue);
+      z-index: 3;
+      opacity: 1;
+      transition: opacity var(--transition-slow);
+    }
+    #splash-text.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* — Responsive adjustments — */
+    @media (max-width: 768px) {
+      .logo {
+        width: 200px;
+      }
+      .landing-title {
+        font-size: 2.4rem;
+      }
+      .landing-subtitle {
+        font-size: 1rem;
+      }
+      .landing-button {
+        padding: 0.6rem 1.8rem;
+        font-size: 0.9rem;
+      }
+      #splash-text {
+        font-size: 2.6rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .logo {
+        width: 160px;
+      }
+      .landing-title {
+        font-size: 2rem;
+      }
+      .landing-subtitle {
+        font-size: 0.9rem;
+      }
+      .landing-button {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.85rem;
+      }
+      #splash-text {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Splash inicial -->
+  <div id="splash-text">Bienvenidos</div>
+
+  <!-- Capa oscura semitransparente -->
+  <div id="dark-overlay"></div>
+
+  <!-- Contenido de la Landing -->
+  <div id="landing-wrapper">
+    <!-- Logo animado -->
+    <img
+      src="{{ url_for('static', filename='images/logo.png') }}"
+      alt="Logo del sistema"
+      class="logo"
+    />
+
+    <!-- Título en blanco con contorno azul oscuro -->
+    <h1 class="landing-title">Gestor de Proyectos</h1>
+    <!-- Subtítulo en blanco con contorno sutil -->
+    <p class="landing-subtitle">
+      ¡Explora tus proyectos de manera sencilla y eficiente!
+    </p>
+
+    <!-- Botón de acción -->
+    <a href="{{ url_for('roles') }}" class="landing-button">Gestionar</a>
+  </div>
+
+  <!-- Scripts de activación de animaciones -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Tras 2 segundos: ocultar texto splash y revelar landing
+      setTimeout(() => {
+        document.getElementById('splash-text').classList.add('hidden');
+        document.getElementById('landing-wrapper').classList.add('visible');
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

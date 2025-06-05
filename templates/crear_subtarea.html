@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if action == "Crear" %}Crear Subtarea{% else %}Editar Subtarea: {{ form.title.data or subtarea.title }}{% endif %}
+  {% if tarea_general %} - Tarea: {{ tarea_general.title }}{% endif %}
+  {% if project %} - Proyecto: {{ project.name }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    {# --- Título y subtítulos --- #}
+    <h1 class="page-title">
+        {% if action == "Crear" %}
+            Crear Nueva Subtarea
+        {% else %}
+            Editar Subtarea: <em>{{ subtarea.title }}</em>
+        {% endif %}
+    </h1>
+    {% if tarea_general %}
+        <p class="project-subtitle" style="font-size: 1.1em; margin-top: calc(var(--space-lg) * -0.5); margin-bottom: var(--space-xs);">
+            Para Tarea General: <strong>{{ tarea_general.title }}</strong>
+        </p>
+    {% endif %}
+    {% if project %}
+        <p class="text-muted" style="text-align: center; margin-bottom: var(--space-lg);">
+            Proyecto: <a href="{{ url_for('ver_proyecto', project_id=project.id) }}">{{ project.name }}</a>
+        </p>
+    {% endif %}
+
+    {# --- Mensajes flash y errores del formulario --- #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if form.errors and not form.csrf_token.errors %}
+        <div class="flash-messages">
+            <div class="alert alert-danger">
+                <p><strong>Por favor, corrige los siguientes errores:</strong></p>
+                <ul>
+                    {% for field_name, error_list in form.errors.items() %}
+                        {% if field_name != 'csrf_token' %}
+                            {% for error in error_list %}
+                                <li>
+                                  <strong>
+                                    {{ form[field_name].label.text if form[field_name] and form[field_name].label else field_name|capitalize }}:
+                                  </strong>
+                                  {{ error }}
+                                </li>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+    {# --- Fin Mensajes flash y errores --- #}
+
+    <div class="card">
+        <div class="card-body">
+            {# IMPORTANTE: enctype para subir archivos #}
+            <form method="POST" enctype="multipart/form-data" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(
+                         class="form-control",
+                         readonly=(action == 'Editar' and current_user.role == 'apoyo')
+                    ) }}
+                    {% if form.title.errors %}
+                      <ul class="errors">{% for e in form.title.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(
+                         class="form-control",
+                         rows="3",
+                         readonly=(action == 'Editar' and current_user.role == 'apoyo')
+                    ) }}
+                    {% if form.description.errors %}
+                      <ul class="errors">{% for e in form.description.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-row" style="display: flex; gap: var(--space-md);">
+                    <div class="form-group" style="flex: 1;">
+                        {{ form.prioridad.label(class="form-label") }}
+                        {{ form.prioridad(
+                             class="form-control select-styled",
+                             disabled=(action == 'Editar' and current_user.role == 'apoyo')
+                        ) }}
+                        {% if form.prioridad.errors %}
+                          <ul class="errors">{% for e in form.prioridad.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        {{ form.fecha_limite.label(class="form-label") }}
+                        {{ form.fecha_limite(
+                             class="form-control date-input",
+                             type="date",
+                             readonly=(action == 'Editar' and current_user.role == 'apoyo')
+                        ) }}
+                        {% if form.fecha_limite.errors %}
+                          <ul class="errors">{% for e in form.fecha_limite.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.status.label(class="form-label") }}
+                    {{ form.status(class="form-control select-styled") }}
+                    {% if form.status.errors %}
+                      <ul class="errors">{% for e in form.status.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.assigned_user.label(class="form-label") }}
+                    {{ form.assigned_user(
+                         class="form-control select-styled",
+                         disabled=(action == 'Editar' and current_user.role == 'apoyo')
+                    ) }}
+                    {% if form.assigned_user.errors %}
+                      <ul class="errors">{% for e in form.assigned_user.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+
+                {# Mostrar enlace para descargar archivo existente si hay uno #}
+                {% if action == 'Editar' and subtarea.archivo_path %}
+                    <div class="form-group">
+                      <label>Documento actual:</label>
+                      <p>
+                        <a href="{{ url_for('descargar_archivo_subtarea', filename=subtarea.archivo_path) }}" target="_blank">
+                          {{ subtarea.archivo_path }}
+                        </a>
+                      </p>
+                    </div>
+                {% endif %}
+
+                {% if action == 'Editar' %}
+                <div class="form-group">
+                    {{ form.avance.label(class="form-label") }}
+
+                    {% if current_user.role == 'apoyo' and subtarea and current_user.id == subtarea.assigned_user_id %}
+                        {# Apoyo sí puede subir su porcentaje con slider #}
+                        {{ form.avance(
+                             class="form-control range-input",
+                             type="range",
+                             min="0",
+                             max="100",
+                             oninput="this.nextElementSibling.value = this.value + '%'"
+                        ) }}
+                        <output class="range-value">{{ form.avance.data|default(0) }}%</output>
+                    {% else %}
+                        {# Para supervisores/encargados, mostramos barra de progreso solo #}
+                        <div class="progress-bar-container" style="margin-top: var(--space-xs);">
+                            <div class="progress-bar" style="width: {{ form.avance.data|default(0) }}%;"></div>
+                            {% if form.avance.data|default(0) > 15 %}
+                              <span class="progress-text-inner">{{ form.avance.data|default(0) }}%</span>
+                            {% endif %}
+                            {% if form.avance.data|default(0) <= 15 %}
+                              <span class="progress-text">{{ form.avance.data|default(0) }}%</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if form.avance.errors %}
+                      <ul class="errors">{% for e in form.avance.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="form-actions button-group mt-4" style="text-align:center;">
+                    {{ form.submit(class="button btn-primary") }}
+                    {% if action == "Editar" and subtarea and subtarea.tarea_general %}
+                        <a href="{{ url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id) }}"
+                           class="button btn-secondary">Cancelar</a>
+                    {% elif action == "Crear" and tarea_general %}
+                        <a href="{{ url_for('ver_tarea_general', tarea_general_id=tarea_general.id) }}"
+                           class="button btn-secondary">Cancelar</a>
+                    {% else %}
+                        <a href="{{ url_for('dashboard') }}" class="button btn-secondary">Cancelar</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const rangeInput = document.querySelector('.range-input');
+    const rangeValueOutput = document.querySelector('.range-value');
+
+    if (rangeInput && rangeValueOutput) {
+      rangeValueOutput.textContent = rangeInput.value + '%';
+      rangeInput.addEventListener('input', function() {
+        rangeValueOutput.textContent = this.value + '%';
+      });
+    }
+  });
+</script>
+{% endblock %}

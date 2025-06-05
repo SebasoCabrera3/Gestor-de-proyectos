@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Tarea General - {{ proyecto.name }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Asignar Tarea General a un Área</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.titulo.label }}<br>
+            {{ form.titulo(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.descripcion.label }}<br>
+            {{ form.descripcion(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.area_id.label }}<br>
+            {{ form.area_id(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.submit(class="button btn-primary") }}
+        </div>
+    </form>
+
+    <div style="margin-top: 1rem;">
+        <a href="{{ url_for('ver_proyecto', project_id=proyecto.id) }}" class="button btn-secondary">← Volver</a>
+    </div>
+</div>
+{% endblock %}

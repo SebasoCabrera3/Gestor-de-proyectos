@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Tarea General - {{ proyecto.name }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Asignar Tarea General a un Área</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.title.label }}<br>
+            {{ form.title(class="form-control", placeholder="Ej: Fase de Diseño de Interfaz") }}
+            {% if form.title.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.title.errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.description.label }}<br>
+            {{ form.description(class="form-control", rows="5", placeholder="Una breve descripción de la tarea...") }}
+            {% if form.description.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.description.errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {# NUEVO CAMPO: Fecha Límite #}
+        <div class="form-group">
+            {{ form.fecha_limite.label }}<br>
+            {{ form.fecha_limite(class="form-control") }}
+            {% if form.fecha_limite.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.fecha_limite.errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {# NUEVO CAMPO: Prioridad #}
+        <div class="form-group">
+            {{ form.prioridad.label }}<br>
+            {{ form.prioridad(class="form-control") }}
+            {% if form.prioridad.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.prioridad.errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.area_id.label }}<br>
+            {{ form.area_id(class="form-control") }}
+            {% if form.area_id.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.area_id.errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group form-buttons">
+            {{ form.submit(class="button btn-primary") }}
+        </div>
+    </form>
+
+    <div style="margin-top: 1rem;">
+        <a href="{{ url_for('ver_proyecto', project_id=proyecto.id) }}" class="button btn-secondary">← Volver</a>
+    </div>
+</div>
+{% endblock %}

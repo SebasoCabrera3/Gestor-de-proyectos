@@ -1,0 +1,194 @@
+{# templates/tarea_general_details.html #}
+{% extends 'base.html' %}
+
+{% block title %}Detalles de Tarea General: {{ tarea_general.title }}{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">{{ tarea_general.title }}</h1>
+  <p class="page-subtitle">Tarea General del Proyecto:
+    <a href="{{ url_for('ver_proyecto', project_id=tarea_general.project.id) }}">
+      {{ tarea_general.project.name }}
+    </a>
+  </p>
+
+  <div class="main-content-grid">
+    <div class="grid-column-left">
+
+      <!-- Información de la Tarea General -->
+      <div class="card neon-border">
+        <div class="card-header"><h3>Información de la Tarea General</h3></div>
+        <div class="card-body">
+          <table class="project-info-table">
+            <tbody>
+              <tr>
+                <th>Descripción:</th>
+                <td>{{ tarea_general.description or 'Sin descripción' }}</td>
+              </tr>
+              <tr>
+                <th>Área Responsable:</th>
+                <td>
+                  {% if tarea_general.area %}
+                    <a href="{{ url_for('ver_area', area_id=tarea_general.area.id) }}">
+                      {{ tarea_general.area.name }}
+                    </a>
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <th>Fecha Límite:</th>
+                <td>
+                  {{ tarea_general.fecha_limite.strftime('%Y-%m-%d') if tarea_general.fecha_limite else 'N/A' }}
+                  {% if tarea_general.is_delayed %}
+                    <span class="status-badge status-retrasado-oro">Retrasada</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <th>Prioridad:</th>
+                <td>
+                  <span class="status-badge prioridad-{{ tarea_general.prioridad|lower }}">
+                    {{ tarea_general.prioridad or 'Media' }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th>Estado:</th>
+                <td>
+                  <span class="status-badge status-{{ tarea_general.status|lower|replace(' ', '-') }}">
+                    {{ tarea_general.status }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th>Avance (%):</th>
+                <td>
+                  {% set pct_tg = tarea_general.avance_automatico|round(0) %}
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ pct_tg }}%; ">
+                      {% if pct_tg > 15 %}
+                        <span class="progress-text-inner">{{ pct_tg }}%</span>
+                      {% endif %}
+                    </div>
+                    {% if pct_tg <= 15 %}
+                      <span class="progress-text">{{ pct_tg }}%</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-footer actions-footer">
+          <div class="button-group">
+            {# Solo supervisor puede editar/eliminar #}
+            {% if current_user.role == 'supervisor' %}
+              <a href="{{ url_for('editar_tarea_general', tarea_general_id=tarea_general.id) }}"
+                 class="button btn-primary">Editar TG</a>
+              <form action="{{ url_for('eliminar_tarea_general', tarea_general_id=tarea_general.id) }}"
+                    method="POST" style="display:inline;"
+                    onsubmit="return confirm('¿Eliminar esta Tarea General?');">
+                <button type="submit" class="button btn-danger">Eliminar TG</button>
+              </form>
+            {% endif %}
+
+            {# Supervisor o encargado pueden crear subtarea #}
+            {% if current_user.role == 'supervisor' or
+                  (current_user.role == 'encargado' and current_user.area_id == tarea_general.area_id) %}
+              <a href="{{ url_for('crear_subtarea', tarea_general_id=tarea_general.id) }}"
+                 class="button btn-create-lg">+ Nueva Subtarea</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Subtareas -->
+      <div class="card neon-border mt-4">
+        <div class="card-header"><h3>Subtareas ({{ subtareas|length }})</h3></div>
+        <div class="card-body">
+          {% if subtareas %}
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Subtarea</th>
+                    <th>Estado</th>
+                    <th>Fecha Límite</th>
+                    <th>Asignado a</th>
+                    <th>Avance Aporte</th>
+                    <th>Avance Validado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for s in subtareas %}
+                    <tr>
+                      <td>
+                        <a href="{{ url_for('ver_subtarea', subtarea_id=s.id) }}">{{ s.title }}</a>
+                      </td>
+                      <td>
+                        <span class="status-badge status-{{ s.status|lower|replace(' ', '-') }}">
+                          {{ s.status }}
+                        </span>
+                      </td>
+                      <td>
+                        {{ s.fecha_limite.strftime('%Y-%m-%d') if s.fecha_limite else 'N/A' }}
+                        {% if s.is_delayed %}
+                          <span class="status-badge status-retrasado-oro">Retrasada</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ s.assigned_user.username.replace('_',' ').title() if s.assigned_user else 'Sin asignar' }}
+                      </td>
+                      <td>{{ s.avance or 0 }}%</td>
+                      <td>{{ s.avance_validado or 0 }}%</td>
+                      <td>
+                        <div class="button-group" style="justify-content:flex-start;">
+                          {% if current_user.role == 'supervisor' %}
+                            <a href="{{ url_for('editar_subtarea', subtarea_id=s.id) }}"
+                               class="button btn-sm btn-info">Editar</a>
+                            <form action="{{ url_for('eliminar_subtarea', subtarea_id=s.id) }}"
+                                  method="POST" style="display:inline;"
+                                  onsubmit="return confirm('¿Eliminar esta Subtarea?');">
+                              <button type="submit" class="button btn-sm btn-danger">Eliminar</button>
+                            </form>
+
+                          {% elif current_user.role == 'encargado' and current_user.area_id == tarea_general.area_id %}
+                            {% if s.documento_aporte %}
+                              <a href="{{ url_for('editar_subtarea', subtarea_id=s.id) }}"
+                                 class="button btn-sm btn-info">Validar</a>
+                            {% else %}
+                              <a href="{{ url_for('ver_subtarea', subtarea_id=s.id) }}"
+                                 class="button btn-sm btn-info">Ver</a>
+                            {% endif %}
+
+                          {% elif current_user.role == 'apoyo' and s.assigned_user_id == current_user.id %}
+                            <a href="{{ url_for('editar_subtarea', subtarea_id=s.id) }}"
+                               class="button btn-sm btn-info">Subir Avance</a>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="empty-state-message">No hay subtareas para esta Tarea General.</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+
+  <div class="button-group mt-4">
+    <a href="{{ url_for('dashboard', project_id=tarea_general.project.id) }}"
+       class="button btn-secondary">← Volver al Dashboard</a>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

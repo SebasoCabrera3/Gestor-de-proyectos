@@ -1,0 +1,354 @@
+{# templates/gestionar_usuarios.html #}
+{% extends 'base.html' %}
+
+{% block title %}Panel Maestro de Usuarios{% endblock %}
+
+{# ==================== MACRO PARA BOTONES ACCIONES ==================== #}
+{% macro user_actions(u) %}
+  {# Decidir si el usuario autenticado actual puede eliminar a `u` #}
+  {% set puede_eliminar = false %}
+  {% if current_user.role == 'supervisor' and u.id != current_user.id %}
+    {% set puede_eliminar = true %}
+  {% elif current_user.role == 'encargado'
+        and u.area_id == current_user.area_id
+        and u.id != current_user.id %}
+    {% set puede_eliminar = true %}
+  {% endif %}
+
+  <div style="display: inline-flex; gap: 8px; justify-content: center; align-items: center;">
+    {# — Botón “Ver Perfil” — #}
+    <a href="{{ url_for('ver_perfil_usuario', user_id=u.id) }}"
+       class="button btn-primary"
+       style="
+         display: inline-flex;
+         align-items: center;
+         justify-content: center;
+         padding: 6px 14px;
+         background-color: #00cfff;
+         color: #0d1117;
+         border-radius: 6px;
+         font-size: 0.95rem;
+         font-weight: 600;
+         text-decoration: none;
+         box-shadow: 0 0 12px rgba(0, 207, 255, 0.6);
+         transition: box-shadow 0.2s ease;
+       "
+       onmouseover="this.style.boxShadow='0 0 20px rgba(0,207,255,0.8)';"
+       onmouseout="this.style.boxShadow='0 0 12px rgba(0,207,255,0.6)';">
+      <i class="material-icons-outlined" style="font-size: 1.1rem; margin-right: 4px;">
+        visibility
+      </i>
+      Ver Perfil
+    </a>
+
+    {# — Botón “Eliminar” — #}
+    {% if puede_eliminar %}
+      <form action="{{ url_for('eliminar_usuario', user_id=u.id) }}"
+            method="POST"
+            onsubmit="return confirm(
+              '¿Seguro que quieres eliminar al usuario \"{{ u.username | replace('_',' ') | title }}\"?\n' +
+              '¡Esta acción no se puede deshacer!'
+            );"
+            style="display: inline-block;">
+        <button type="submit"
+                class="button btn-danger"
+                style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 6px 14px;
+                  background-color: #f44336;
+                  color: #ffffff;
+                  border-radius: 6px;
+                  font-size: 0.95rem;
+                  font-weight: 600;
+                  box-shadow: 0 0 12px rgba(244, 67, 54, 0.6);
+                  transition: box-shadow 0.2s ease;
+                  cursor: pointer;
+                "
+                onmouseover="this.style.boxShadow='0 0 20px rgba(244,67,54,0.8)';"
+                onmouseout="this.style.boxShadow='0 0 12px rgba(244,67,54,0.6)';">
+          <i class="material-icons-outlined" style="font-size: 1.1rem; margin-right: 4px;">
+            delete_forever
+          </i>
+          Eliminar
+        </button>
+      </form>
+    {% endif %}
+  </div>
+{% endmacro %}
+{# ===================================================================== #}
+
+
+{% block content %}
+<section class="dashboard-main-content" style="display: flex; flex-direction: column; align-items: center;">
+
+  <header class="page-header v5-page-header" style="text-align: center; width: 100%;">
+    <div class="page-header-content">
+      <h1 class="page-title v5-page-title">
+        <i class="material-icons-outlined title-icon" style="vertical-align: middle;">supervisor_account</i>
+        Panel Maestro de Usuarios
+      </h1>
+      <p class="greeting-text v5-greeting-text" style="margin-top: 6px;">
+        {% if current_user.role == 'supervisor' %}
+          <span class="status-badge status-supervisor v5-badge">Supervisor</span>
+        {% else %}
+          <span class="status-badge status-encargado v5-badge">Encargado</span>
+        {% endif %}
+      </p>
+    </div>
+  </header>
+
+  <div class="card user-management-card-v5 mt-4" style="width: 90%; max-width: 900px;">
+    <div class="card-header v5-card-header" style="text-align: center;">
+      <h2 class="card-title">
+        <i class="material-icons-outlined" style="vertical-align: middle; margin-right: 6px;">assignment_ind</i>
+        Lista de Usuarios del Sistema
+      </h2>
+    </div>
+    <div class="card-body v5-card-body">
+
+      {% if usuarios %}
+        {# — 1) Filtrar usuarios con área definida — #}
+        {% set usuarios_con_area = [] %}
+        {% for u in usuarios %}
+          {% if u.area is not none %}
+            {% set _ = usuarios_con_area.append(u) %}
+          {% endif %}
+        {% endfor %}
+
+        {# — 2) Filtrar usuarios sin área definida — #}
+        {% set usuarios_sin_area = [] %}
+        {% for u in usuarios %}
+          {% if u.area is none %}
+            {% set _ = usuarios_sin_area.append(u) %}
+          {% endif %}
+        {% endfor %}
+
+        {# — 3) Agrupar usuarios_con_area por nombre de área — #}
+        {% set grupos_por_area = usuarios_con_area
+                                 | sort(attribute='area.name')
+                                 | groupby('area.name') %}
+
+
+        {# ========== SECCIÓN: Usuarios con Área Asignada ========== #}
+        {% for area_nombre, grupo in grupos_por_area %}
+          <details class="area-details-v5 mt-3"
+                   style="border: 1px solid rgba(0,207,255,0.3); border-radius: 6px; width: 100%; overflow: hidden;">
+            <summary style="
+              background-color: #0d1117;
+              padding: 12px 16px;
+              font-size: 1.05rem;
+              font-weight: 600;
+              color: #00cfff;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: left;
+              text-align: center;
+            ">
+              <i class="material-icons-outlined" style="vertical-align: middle; font-size: 1.3rem; margin-right: 6px;">
+                corporate_fare
+              </i>
+              Área: {{ area_nombre }}
+              <span class="badge count-badge-v5" style="
+                background-color: rgba(0,207,255,0.2);
+                color: #00cfff;
+                font-size: 0.9rem;
+                padding: 2px 6px;
+                border-radius: 12px;
+                margin-left: 8px;
+              ">
+                {{ grupo|length }} Usuario{{ 's' if grupo|length > 1 else '' }}
+              </span>
+              <i class="material-icons-outlined toggle-icon" style="font-size: 1.3rem; color: #00cfff; margin-left: 12px;">
+                expand_more
+              </i>
+            </summary>
+
+            <div class="table-responsive mt-2" style="padding: 0 16px 16px; display: flex; justify-content: center;">
+              <table class="data-table" style="
+                width: 100%;
+                max-width: 800px;
+                border-collapse: collapse;
+                text-align: center;
+                background-color: #0d1117;
+              ">
+                <thead>
+                  <tr style="
+                    background-color: #0b0e12;
+                    border-bottom: 1px solid rgba(0,207,255,0.2);
+                  ">
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Usuario</th>
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Email</th>
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Rol</th>
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for u in grupo %}
+                    <tr style="
+                      border-bottom: 1px solid rgba(0,207,255,0.1);
+                      background-color: #0d1117;
+                    ">
+                      <td style="padding: 10px; color: #e0e0e0; font-size: 0.95rem;">{{ u.username|replace('_',' ')|title }}</td>
+                      <td style="padding: 10px; color: #e0e0e0; font-size: 0.95rem;">{{ u.email }}</td>
+                      <td style="padding: 10px;">
+                        <span style="
+                          display: inline-block;
+                          font-size: 0.9rem;
+                          background-color: rgba(
+                            {% if u.role == 'supervisor' %}171, 71, 188, 0.2{%
+                               elif u.role == 'encargado' %}255, 193, 7, 0.2{%
+                               else %}0, 232, 120, 0.2{% endif %}
+                          );
+                          color:
+                            {% if u.role == 'supervisor' %}#AB47BC{%
+                               elif u.role == 'encargado' %}#FFC107{%
+                               else %}#00E878{% endif %};
+                          padding: 4px 8px;
+                          border-radius: 12px;
+                        ">
+                          {{ u.role|capitalize }}
+                        </span>
+                      </td>
+                      <td style="padding: 10px;">
+                        {{ user_actions(u) }}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        {% endfor %}
+        {# ============================================================= #}
+
+
+        {# ========== SECCIÓN: Oficina de Proyectos (antes “Usuarios Sin Asignar Área”) ========== #}
+        {% if usuarios_sin_area %}
+          <details class="area-details-v5 mt-4"
+                   style="border: 1px solid rgba(255,193,7,0.3); border-radius: 6px; width: 100%; overflow: hidden;">
+            <summary style="
+              background-color: #0d1117;
+              padding: 12px 16px;
+              font-size: 1.05rem;
+              font-weight: 600;
+              color: #ffc107;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: left;
+              text-align: center;
+            ">
+              <i class="material-icons-outlined" style="vertical-align: middle; font-size: 1.3rem; margin-right: 6px;">
+                person_search
+              </i>
+              Oficina de Proyectos
+              <span class="badge count-badge-v5" style="
+                background-color: rgba(255,193,7,0.2);
+                color: #ffc107;
+                font-size: 0.9rem;
+                padding: 2px 6px;
+                border-radius: 12px;
+                margin-left: 8px;
+              ">
+                {{ usuarios_sin_area|length }} Usuario{{ 's' if usuarios_sin_area|length > 1 else '' }}
+              </span>
+              <i class="material-icons-outlined toggle-icon" style="font-size: 1.3rem; color: #ffc107; margin-left: 12px;">
+                expand_more
+              </i>
+            </summary>
+
+            <div class="table-responsive mt-2" style="padding: 0 16px 16px; display: flex; justify-content: center;">
+              <table class="data-table" style="
+                width: 100%;
+                max-width: 800px;
+                border-collapse: collapse;
+                text-align: center;
+                background-color: #0d1117;
+              ">
+                <thead>
+                  <tr style="
+                    background-color: #0b0e12;
+                    border-bottom: 1px solid rgba(255,193,7,0.2);
+                  ">
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Usuario</th>
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Email</th>
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Rol</th>
+                    <th style="padding: 10px; color: #00cfff; font-size: 0.95rem;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for u in usuarios_sin_area %}
+                    <tr style="
+                      border-bottom: 1px solid rgba(255,193,7,0.1);
+                      background-color: #0d1117;
+                    ">
+                      <td style="padding: 10px; color: #e0e0e0; font-size: 0.95rem;">{{ u.username|replace('_',' ')|title }}</td>
+                      <td style="padding: 10px; color: #e0e0e0; font-size: 0.95rem;">{{ u.email }}</td>
+                      <td style="padding: 10px;">
+                        <span style="
+                          display: inline-block;
+                          font-size: 0.9rem;
+                          background-color: rgba(
+                            {% if u.role == 'supervisor' %}171, 71, 188, 0.2{%
+                               elif u.role == 'encargado' %}255, 193, 7, 0.2{%
+                               else %}0, 232, 120, 0.2{% endif %}
+                          );
+                          color:
+                            {% if u.role == 'supervisor' %}#AB47BC{%
+                               elif u.role == 'encargado' %}#FFC107{%
+                               else %}#00E878{% endif %};
+                          padding: 4px 8px;
+                          border-radius: 12px;
+                        ">
+                          {{ u.role|capitalize }}
+                        </span>
+                      </td>
+                      <td style="padding: 10px;">
+                        {{ user_actions(u) }}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        {% endif %}
+        {# ============================================================= #}
+
+
+      {% else %}
+        <div class="empty-state-container-v5 text-center py-5" style="width: 100%; color: #e0e0e0;">
+          <i class="material-icons-outlined empty-state-icon-v5" style="font-size: 3rem; color: rgba(255,255,255,0.3);">
+            people_outline
+          </i>
+          <h3 class="mt-3">Sistema Sin Usuarios Registrados</h3>
+          <p class="text-muted-v5" style="color: rgba(255,255,255,0.6);">
+            A medida que los usuarios se registren, aparecerán aquí para su administración.
+          </p>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    // Rotar el ícono de <summary> cuando se colapsa/expande:
+    document.querySelectorAll('details').forEach(detailsEl => {
+      const icon = detailsEl.querySelector('.toggle-icon');
+      detailsEl.addEventListener('toggle', () => {
+        if (detailsEl.open) {
+          icon.textContent = 'expand_less';
+        } else {
+          icon.textContent = 'expand_more';
+        }
+      });
+    });
+  </script>
+{% endblock %}

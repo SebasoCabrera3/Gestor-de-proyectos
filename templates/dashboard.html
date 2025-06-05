@@ -1,0 +1,745 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block sidebar %}
+<aside class="sidebar">
+  <h3 class="sidebar-title"><i class="material-icons-outlined">account_tree</i> Mis Proyectos</h3>
+  <ul class="sidebar-list">
+    {% for project_item in proyectos %}
+      <li>
+        <a href="{{ url_for('ver_proyecto', project_id=project_item.id) }}" class="sidebar-link">{{ project_item.nombre }}</a>
+        {% if project_item.tareas_generales %}
+          <ul class="sidebar-sub-list">
+            {% for tg_sidebar in project_item.tareas_generales %}
+              <li>
+                <a href="{{ url_for('ver_tarea_general', tarea_general_id=tg_sidebar.id) }}">{{ tg_sidebar.nombre }}</a>
+                {% if tg_sidebar.subtareas and tg_sidebar.subtareas|length > 0 %}
+                  <ul class="sidebar-sub-list nested">
+                    {% for st_sidebar in tg_sidebar.subtareas %}
+                      <li>
+                        <a href="{{ url_for('ver_tarea_general', tarea_general_id=tg_sidebar.id) }}#subtarea-{{ st_sidebar.id }}">
+                          ↳ {{ st_sidebar.nombre }}
+                        </a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </li>
+    {% endfor %}
+    {% if current_user.role == 'supervisor' %}
+      <li>
+        <a href="{{ url_for('crear_proyecto') }}" class="button btn-primary sidebar-button">
+          <i class="material-icons-outlined">add_circle_outline</i> Nuevo Proyecto
+        </a>
+      </li>
+    {% endif %}
+  </ul>
+</aside>
+{% endblock %}
+
+
+{% block content %}
+<section class="dashboard-main-content">
+  <h1 class="page-title">Dashboard de {{ current_user.role|capitalize }}</h1>
+
+  <p class="greeting-text">
+    Bienvenido, {{ current_user.username.replace('_',' ').title() }}.
+  </p>
+
+  <!-- ======================
+       TARJETAS RESUMEN
+       ====================== -->
+  <div class="dashboard-summary-cards">
+    <div class="summary-card total-projects">
+      <div class="icon"><i class="material-icons-outlined">folder_open</i></div>
+      <div class="details">
+        <span class="number">{{ total_proyectos_activos }}</span>
+        <span class="label">Proyectos Activos</span>
+      </div>
+    </div>
+    <div class="summary-card total-tasks">
+      <div class="icon"><i class="material-icons-outlined">list_alt</i></div>
+      <div class="details">
+        <span class="number">{{ total_tareas_pendientes }}</span>
+        <span class="label">Tareas Generales Pendientes</span>
+      </div>
+    </div>
+    <div class="summary-card delayed-tasks">
+      <div class="icon"><i class="material-icons-outlined">warning_amber</i></div>
+      <div class="details">
+        <span class="number">{{ subtareas_retrasadas_data|length }}</span>
+        <span class="label">Subtareas Retrasadas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================
+       BLOQUE PARA SUPERVISOR
+       ====================== -->
+  {% if current_user.role == 'supervisor' %}
+    <div class="card neon-border mt-3">
+      <div class="card-header">
+        <h2 class="card-title">Visión General de Proyectos</h2>
+      </div>
+      <div class="card-body">
+        <div class="filter-bar">
+          <form method="GET" action="{{ url_for('dashboard') }}">
+            <div class="filter-group">
+              <label for="search-project-name-sv" class="form-label">Buscar por Nombre:</label>
+              <input
+                type="text"
+                id="search-project-name-sv"
+                name="search_project"
+                class="form-control"
+                placeholder="Nombre del proyecto..."
+                value="{{ search_project_val or '' }}"
+              >
+            </div>
+            <div class="filter-group">
+              <label for="filter-project-status-sv" class="form-label">Estado del Proyecto:</label>
+              <select id="filter-project-status-sv" name="status_project" class="form-control">
+                <option value="">Todos</option>
+                <option value="Pendiente"    {% if status_project_val == 'Pendiente'    %}selected{% endif %}>Pendiente</option>
+                <option value="En Ejecución"  {% if status_project_val == 'En Ejecución' %}selected{% endif %}>En Ejecución</option>
+                <option value="Finalizado"    {% if status_project_val == 'Finalizado'   %}selected{% endif %}>Finalizado</option>
+                <option value="Suspendido"    {% if status_project_val == 'Suspendido'   %}selected{% endif %}>Suspendido</option>
+                <option value="Cancelado"     {% if status_project_val == 'Cancelado'    %}selected{% endif %}>Cancelado</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <button type="submit" class="button btn-primary button-icon" aria-label="Filtrar Proyectos">
+                <i class="material-icons-outlined">search</i>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {% if main_projects and main_projects|length > 0 %}
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  {% macro sortable_th(field_name, display_name, current_sort_by, current_sort_order, base_params) %}
+                    {% set sort_order_next = 'desc' if (current_sort_by == field_name and current_sort_order == 'asc') else 'asc' %}
+                    {% set url_params = {} %}
+                    {% set _ = url_params.update(base_params) %}
+                    {% set _ = url_params.update({'sort_by': field_name, 'sort_order': sort_order_next}) %}
+                    <th>
+                      <a href="{{ url_for('dashboard', **url_params) }}">
+                        {{ display_name }}
+                        {% if current_sort_by == field_name %}
+                          <i class="material-icons-outlined sort-icon">
+                            {{ 'arrow_drop_up' if current_sort_order == 'asc' else 'arrow_drop_down' }}
+                          </i>
+                        {% endif %}
+                      </a>
+                    </th>
+                  {% endmacro %}
+                  {% set base_filter_params = {'search_project': search_project_val or '', 'status_project': status_project_val or ''} %}
+                  {{ sortable_th('project_name',     'PROYECTO',           current_sort_by, current_sort_order, base_filter_params) }}
+                  <th>TAREAS GENERALES</th>
+                  {{ sortable_th('project_status',   'ESTADO PROYECTO',    current_sort_by, current_sort_order, base_filter_params) }}
+                  {{ sortable_th('project_end_date', 'FECHA FIN PROYECTO', current_sort_by, current_sort_order, base_filter_params) }}
+                  <th>AVANCE (%)</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for project in main_projects %}
+                  <tr>
+                    <td data-label="Proyecto">
+                      <a href="{{ url_for('ver_proyecto', project_id=project.id) }}" class="project-link">
+                        {{ project.name }}
+                      </a>
+                    </td>
+                    <td data-label="Tareas Generales">
+                      {% if project.tareas_generales and project.tareas_generales|length > 0 %}
+                        {{ project.tareas_generales|length }} Tareas
+                        <a href="{{ url_for('ver_proyecto', project_id=project.id) }}" class="small-link">(Ver)</a>
+                      {% else %}
+                        0 Tareas
+                      {% endif %}
+                    </td>
+                    <td data-label="Estado Proyecto">
+                      <span class="status-badge status-{{ project.status|lower|replace(' ', '-') }}">{{ project.status }}</span>
+                    </td>
+                    <td data-label="Fecha Fin Proyecto">
+                      {{ project.end_date.strftime('%Y-%m-%d') if project.end_date else 'N/A' }}
+                    </td>
+
+                    <!-- BARRA DE PROGRESO PARA CADA PROYECTO -->
+                    <td data-label="Avance (%)">
+                      {% set avance_pct = project_progress_map.get(project.id, 0) %}
+                      <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{ avance_pct }}%;">
+                          {% if avance_pct > 15 %}
+                            <span class="progress-text-inner">{{ avance_pct }}%</span>
+                          {% endif %}
+                        </div>
+                        {% if avance_pct <= 15 %}
+                          <span class="progress-text">{{ avance_pct }}%</span>
+                        {% endif %}
+                      </div>
+                    </td>
+
+                    <td data-label="Acciones">
+                      <div class="button-group" style="justify-content: flex-start; flex-wrap: nowrap;">
+                        <a href="{{ url_for('ver_proyecto', project_id=project.id) }}" class="button btn-info btn-hover">Detalles</a>
+                        <a href="{{ url_for('editar_proyecto', project_id=project.id) }}" class="button btn-edit btn-hover">Editar</a>
+                        <form
+                          action="{{ url_for('eliminar_proyecto', project_id=project.id) }}"
+                          method="POST"
+                          class="inline-form"
+                          onsubmit="return confirm('¿Confirmas eliminar este proyecto?');"
+                        >
+                          <button type="submit" class="button btn-danger btn-hover">Eliminar</button>
+                        </form>
+                        <a
+                          href="{{ url_for('descargar_reporte_proyecto', project_id=project.id) }}"
+                          class="button btn-secondary btn-hover"
+                          target="_blank"
+                          title="Descargar Reporte"
+                        >
+                          <i class="material-icons-outlined">download</i>
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- BOTÓN PARA CREAR NUEVO PROYECTO ABAJO DE LA TABLA -->
+          <div class="mt-4 text-center">
+            <a href="{{ url_for('crear_proyecto') }}" class="button btn-primary btn-create-lg">
+              <i class="material-icons-outlined" style="font-size: 1.2rem; vertical-align: middle;">add_circle</i>
+              <span style="margin-left: 0.5rem; font-family: 'Montserrat', sans-serif; font-weight: 600;">Crear Nuevo Proyecto</span>
+            </a>
+          </div>
+        {% else %}
+          <p class="empty-state-message">No hay proyectos para mostrar con los filtros actuales.</p>
+          <div class="mt-4 text-center">
+            <a href="{{ url_for('crear_proyecto') }}" class="button btn-primary btn-create-lg">
+              <i class="material-icons-outlined" style="font-size: 1.2rem; vertical-align: middle;">add_circle</i>
+              <span style="margin-left: 0.5rem; font-family: 'Montserrat', sans-serif; font-weight: 600;">Crear Nuevo Proyecto</span>
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+
+  <!-- ======================
+       BLOQUE PARA ENCARGADO
+       ====================== -->
+  {% elif current_user.role == 'encargado' %}
+    <div class="card neon-border mt-3">
+      <div class="card-header">
+        <h2 class="card-title">Mis Tareas Generales</h2>
+      </div>
+      <div class="card-body">
+        {% if tareas_generales_encargado and tareas_generales_encargado|length > 0 %}
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>PROYECTO</th>
+                  <th>TAREA GENERAL</th>
+                  <th>ESTADO</th>
+                  <th>FECHA LÍMITE</th>
+                  <th>AVANCE (%)</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for tarea in tareas_generales_encargado %}
+                  <tr>
+                    <!-- Columna: Proyecto -->
+                    <td data-label="Proyecto">
+                      {{ tarea.project.name }}
+                    </td>
+
+                    <!-- Columna: Tarea General -->
+                    <td data-label="Tarea General">
+                      <a href="{{ url_for('ver_tarea_general', tarea_general_id=tarea.id) }}" class="project-link">
+                        {{ tarea.title }}
+                      </a>
+                    </td>
+
+                    <!-- Columna: Estado -->
+                    <td data-label="Estado">
+                      <span class="status-badge status-{{ tarea.status|lower|replace(' ', '-') }}">
+                        {{ tarea.status }}
+                      </span>
+                    </td>
+
+                    <!-- Columna: Fecha Límite -->
+                    <td data-label="Fecha Límite">
+                      {% if tarea.fecha_limite %}
+                        {{ tarea.fecha_limite.strftime('%Y-%m-%d') }}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+
+                    <!-- Columna: Avance (%) -->
+                    <td data-label="Avance (%)">
+                      {% set avance_t = tasks_progress_map.get(tarea.id, 0) %}
+                      <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{ avance_t }}%;">
+                          {% if avance_t > 15 %}
+                            <span class="progress-text-inner">{{ avance_t }}%</span>
+                          {% endif %}
+                        </div>
+                        {% if avance_t <= 15 %}
+                          <span class="progress-text">{{ avance_t }}%</span>
+                        {% endif %}
+                      </div>
+                    </td>
+
+                    <!-- Columna: Acciones -->
+                    <td data-label="Acciones">
+                      <div class="button-group" style="justify-content: flex-start; flex-wrap: nowrap;">
+                        <a href="{{ url_for('ver_tarea_general', tarea_general_id=tarea.id) }}" class="button btn-info btn-hover">
+                          Detalles
+                        </a>
+                        {# -- Botón “Editar” eliminado para encargados -- #}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-state-message">No tienes tareas generales asignadas.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  <!-- ======================
+       BLOQUE PARA APOYO
+       ====================== -->
+  {% elif current_user.role == 'apoyo' %}
+    <div class="card neon-border mt-3">
+      <div class="card-header">
+        <h2 class="card-title">Mis Subtareas</h2>
+      </div>
+      <div class="card-body">
+        {% if subtareas_del_apoyo and subtareas_del_apoyo|length > 0 %}
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>SUBTAREA</th>
+                  <th>TAREA GENERAL</th>
+                  <th>ESTADO</th>
+                  <th>FECHA LÍMITE</th>
+                  <th>AVANCE (%)</th>
+                  <th>ACCIONES</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in subtareas_del_apoyo %}
+                  <tr>
+                    <td data-label="Subtarea">
+                      <a href="{{ url_for('ver_subtarea', subtarea_id=s.id) }}" class="project-link">{{ s.title }}</a>
+                    </td>
+                    <td data-label="Tarea General">
+                      {{ s.tarea_general.title }}
+                    </td>
+                    <td data-label="Estado">
+                      <span class="status-badge status-{{ s.status|lower|replace(' ', '-') }}">{{ s.status }}</span>
+                    </td>
+                    <td data-label="Fecha Límite">
+                      {% if s.fecha_limite %}
+                        {{ s.fecha_limite.strftime('%Y-%m-%d') }}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+                    <td data-label="Avance (%)">
+                      {{ s.avance or 0 }}%
+                    </td>
+                    <td data-label="Acciones">
+                      <a href="{{ url_for('editar_subtarea', subtarea_id=s.id) }}" class="button btn-sm btn-info">Subir Avance</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-state-message">No tienes subtareas asignadas.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</section>
+{% endblock %}
+
+
+{% block styles %}
+  {{ super() }}
+  <style>
+    /* =========================== */
+    /* BARRA DE PROGRESO MEJORADA   */
+    /* =========================== */
+    .progress-bar-container {
+      background-color: #2c3340;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      height: 22px;
+      min-width: 75px;
+    }
+    .progress-bar-container .progress-bar {
+      background-color: #0dc878;
+      height: 100%;
+      transition: width 0.5s ease-in-out;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .progress-bar-container .progress-text {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffffff;
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    .progress-bar-container:hover .progress-bar {
+      filter: brightness(1.1);
+    }
+
+    /* =========================== */
+    /* BOTÓN “CREAR NUEVO PROYECTO” */
+    /* =========================== */
+    .btn-create-lg {
+      background: linear-gradient(90deg, #00d0ff, #0dc878);
+      border: none;
+      border-radius: 6px;
+      padding: 0.6rem 1.2rem;
+      color: #ffffff;
+      font-size: 1rem;
+      font-family: 'Montserrat', sans-serif;
+      display: inline-flex;
+      align-items: center;
+      transition: filter 0.2s, transform 0.2s;
+      text-decoration: none;
+    }
+    .btn-create-lg:hover {
+      filter: brightness(1.1);
+      transform: translateY(-2px);
+    }
+
+    /* =========================== */
+    /* GRÁFICOS (Chart.js)         */
+    /* =========================== */
+    .chart-placeholder {
+      position: relative;
+      background: #0f1620;
+      border-radius: 8px;
+    }
+
+    /* =========================== */
+    /* TABLA DE DATOS              */
+    /* =========================== */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    .data-table th,
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #2c3340;
+      color: #e0e6f0;
+      vertical-align: middle;
+    }
+    .data-table thead th {
+      background-color: #161c28;
+      color: #00d0ff;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .data-table tbody tr:hover {
+      background-color: #1e2533;
+    }
+    .data-table a {
+      color: #00d0ff;
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .data-table a:hover {
+      text-decoration: underline;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: white;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .status-pendiente    { background-color: #ffc107; }
+    .status-en-ejecución { background-color: #0dc878; }
+    .status-finalizado   { background-color: #28a745; }
+    .status-suspendido   { background-color: #6c757d; }
+    .status-cancelado    { background-color: #dc3545; }
+
+    /* =========================== */
+    /* BOTONES Y OTROS             */
+    /* =========================== */
+    .button-group .button {
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      transition: transform 0.2s ease-in-out;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .button-group .button:hover {
+      transform: translateY(-2px);
+    }
+    .button.btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.875rem;
+    }
+    .small-link {
+      font-size: 0.75rem;
+      color: #00d0ff;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .neon-border {
+      border: 2px solid #00d0ff;
+      border-radius: 8px;
+    }
+    .mt-3 { margin-top: 1rem; }
+    .mt-4 { margin-top: 1.5rem; }
+    .mt-5 { margin-top: 2rem; }
+
+    /* =========================== */
+    /* RESPONSIVE                  */
+    /* =========================== */
+    @media (max-width: 768px) {
+      .charts-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .chart-placeholder {
+        width: 100% !important;
+        height: auto !important;
+        margin-bottom: 1rem;
+      }
+    }
+    @media (max-width: 576px) {
+      .progress-bar-container {
+        height: 20px;
+      }
+      .progress-bar-container .progress-text {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+{% endblock %}
+
+
+{% block scripts %}
+  {{ super() }}
+  <!-- Incluir Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      {% if current_user.role == 'supervisor' %}
+        // ================================
+        // AJUSTES GLOBALES DE CHART.JS
+        // ================================
+        Chart.defaults.font.family = 'Montserrat, sans-serif';
+        Chart.defaults.color = '#e0e6f0';
+
+        // ==========================================
+        // PLUGIN PERSONALIZADO: TEXTO CENTRAL (Donut)
+        // ==========================================
+        const centerTextPlugin = {
+          id: 'centerTextPlugin',
+          afterDatasetsDraw(chart) {
+            const { ctx, width, height } = chart;
+            const dataset = chart.data.datasets[0];
+            const data = dataset.data;
+            const total = data.reduce((sum, v) => sum + v, 0);
+            if (total === 0) return;
+
+            // Ubicar texto en el centro
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const formatted = 'Total: ' + total;
+
+            ctx.save();
+            ctx.font = '400 1rem Montserrat, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(formatted, centerX, centerY);
+            ctx.restore();
+          }
+        };
+        Chart.register(centerTextPlugin);
+
+        /* ------------------------------------ */
+        /* 1) PROYECTOS POR ESTADO (Doughnut)  */
+        /* ------------------------------------ */
+        const proyectosLabelsRaw = {{ chart_proyectos_labels|tojson|safe }};
+        const proyectosDataRaw   = {{ chart_proyectos_values|tojson|safe }};
+        const ctxProy = document.getElementById('chartProyectosPorEstado').getContext('2d');
+
+        if (
+          Array.isArray(proyectosLabelsRaw) && proyectosLabelsRaw.length &&
+          Array.isArray(proyectosDataRaw) && proyectosDataRaw.length
+        ) {
+          // Calcular porcentajes para etiquetas
+          const totalProy = proyectosDataRaw.reduce((sum, x) => sum + x, 0);
+          const proyectosLabelsPct = proyectosLabelsRaw.map((lab, i) => {
+            const pct = totalProy ? Math.round((proyectosDataRaw[i] / totalProy) * 100) : 0;
+            return `${lab} (${pct}%)`;
+          });
+
+          new Chart(ctxProy, {
+            type: 'doughnut',
+            data: {
+              labels: proyectosLabelsPct,
+              datasets: [{
+                data: proyectosDataRaw,
+                backgroundColor: [
+                  'rgba(0, 208, 255, 0.8)',
+                  'rgba(0, 232, 120, 0.8)',
+                  'rgba(255, 193, 7, 0.8)',
+                  'rgba(171, 71, 188, 0.8)',
+                  'rgba(244, 67, 54, 0.8)',
+                  'rgba(128, 128, 128, 0.8)'
+                ],
+                borderColor: '#0f1620',
+                borderWidth: 2
+              }]
+            },
+            plugins: [centerTextPlugin],
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              layout: {
+                padding: {
+                  left: 10,
+                  right: 10,
+                  top: 10,
+                  bottom: 30   // espacio para leyenda dentro del recuadro
+                }
+              },
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  align: 'start',
+                  labels: {
+                    color: '#e0e6f0',
+                    boxWidth: 12,
+                    padding: 8,
+                    font: { family: 'Montserrat', sans-serif' }
+                  }
+                },
+                title: { display: false }
+              }
+            }
+          });
+        } else {
+          document.getElementById('chartProyectosPorEstado').style.display = 'none';
+          const pm = document.createElement('p');
+          pm.innerText = 'No hay datos para mostrar.';
+          pm.style.color = '#ffffff80';
+          pm.style.textAlign = 'center';
+          pm.style.padding = '1rem';
+          pm.style.marginTop = '1rem';
+          document.getElementById('chartProyectosPorEstado').parentNode.appendChild(pm);
+        }
+
+        /* -------------------------------------- */
+        /* 2) TAREAS POR PRIORIDAD (Pie Chart)    */
+        /* -------------------------------------- */
+        const tareasLabelsRaw = {{ chart_tareas_labels|tojson|safe }};
+        const tareasDataRaw   = {{ chart_tareas_values|tojson|safe }};
+        const ctxTas = document.getElementById('chartTareasPorPrioridad').getContext('2d');
+
+        if (
+          Array.isArray(tareasLabelsRaw) && tareasLabelsRaw.length &&
+          Array.isArray(tareasDataRaw) && tareasDataRaw.length
+        ) {
+          // Calcular porcentajes para etiquetas
+          const totalTas = tareasDataRaw.reduce((sum, x) => sum + x, 0);
+          const tareasLabelsPct = tareasLabelsRaw.map((lab, i) => {
+            const pct = totalTas ? Math.round((tareasDataRaw[i] / totalTas) * 100) : 0;
+            return `${lab} (${pct}%)`;
+          });
+
+          new Chart(ctxTas, {
+            type: 'pie',
+            data: {
+              labels: tareasLabelsPct,
+              datasets: [{
+                data: tareasDataRaw,
+                backgroundColor: [
+                  'rgba(244, 67, 54, 0.8)',
+                  'rgba(255, 193, 7, 0.8)',
+                  'rgba(0, 232, 120, 0.8)',
+                  'rgba(128, 128, 128, 0.8)'
+                ],
+                borderColor: '#0f1620',
+                borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              layout: {
+                padding: {
+                  left: 10,
+                  right: 10,
+                  top: 10,
+                  bottom: 30   // espacio para leyenda dentro del recuadro
+                }
+              },
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  align: 'start',
+                  labels: {
+                    color: '#e0e6f0',
+                    boxWidth: 12,
+                    padding: 8,
+                    font: { family: 'Montserrat', sans-serif' }
+                  }
+                },
+                title: { display: false }
+              }
+            }
+          });
+        } else {
+          document.getElementById('chartTareasPorPrioridad').style.display = 'none';
+          const tm = document.createElement('p');
+          tm.innerText = 'No hay datos para mostrar.';
+          tm.style.color = '#ffffff80';
+          tm.style.textAlign = 'center';
+          tm.style.padding = '1rem';
+          tm.style.marginTop = '1rem';
+          document.getElementById('chartTareasPorPrioridad').parentNode.appendChild(tm);
+        }
+      {% endif %}
+    });
+  </script>
+{% endblock %}

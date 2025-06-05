@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Nuevo Proyecto{% endblock %}
+
+{% block head %}
+  {{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1 class="form-page-title">Crear Nuevo Proyecto</h1>
+
+  {# Validaciones del formulario (sin duplicar mensajes flash) #}
+  {% if form.errors and not form.csrf_token.errors %}
+    <div class="flash-messages">
+      <div class="alert alert-danger">
+          <p><strong>Por favor, corrige los siguientes errores:</strong></p>
+          <ul>
+              {% for field_name, error_list in form.errors.items() %}
+                  {% if field_name != 'csrf_token' %}
+                      {% for error in error_list %}
+                          <li><strong>{{ form[field_name].label.text if form[field_name] and form[field_name].label else field_name|capitalize }}:</strong> {{ error }}</li>
+                      {% endfor %}
+                  {% endif %}
+              {% endfor %}
+          </ul>
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="form-group">
+      {{ form.name.label(class="form-label") }}
+      {{ form.name(class="form-control", placeholder="Ej. Rehabilitación Vial Estratosférica") }}
+      {% if form.name.errors %}
+          <ul class="errors">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      {{ form.description.label(class="form-label") }}
+      {{ form.description(class="form-control", rows="4", placeholder="Descripción detallada del proyecto cósmico") }}
+      {% if form.description.errors %}
+          <ul class="errors">{% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group" style="flex:1;">
+          {{ form.start_date.label(class="form-label") }}
+          {{ form.start_date(class="form-control", type="date") }}
+          {% if form.start_date.errors %}
+              <ul class="errors">{% for error in form.start_date.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+      </div>
+      <div class="form-group" style="flex:1;">
+          {{ form.end_date.label(class="form-label") }}
+          {{ form.end_date(class="form-control", type="date") }}
+          {% if form.end_date.errors %}
+              <ul class="errors">{% for error in form.end_date.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+      </div>
+    </div>
+
+    <div class="form-actions button-group">
+      {{ form.submit(class="button btn-primary") }}
+      <a href="{{ url_for('dashboard') }}" class="button btn-secondary">← Volver</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

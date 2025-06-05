@@ -1,0 +1,153 @@
+{# templates/area_details.html #}
+{% extends 'base.html' %}
+
+{% block title %}Detalles del Área: {{ area.name }}{% endblock %}
+
+{% block content %}
+  {# --- Mensajes flash si los hubiera para esta página --- #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <h1 class="page-title">Área: {{ area.name }}</h1>
+  {% if area.codigo %}
+    <p class="project-subtitle">Código de Área: {{ area.codigo }}</p>
+  {% endif %}
+
+  <div class="card neon-border mt-4">
+    <div class="card-header">
+      <h3>Tareas Generales en esta Área</h3>
+    </div>
+    <div class="card-body">
+      {% if tareas_generales_area %}
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tarea General</th>
+                <th>Proyecto Asociado</th>
+                <th>Estado</th>
+                <th>Prioridad</th>
+                <th>Fecha Límite</th>
+                <th>Progreso</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tg in tareas_generales_area %}
+                <tr>
+                  <td data-label="Tarea General">{{ tg.title }}</td>
+                  <td data-label="Proyecto Asociado">
+                    {% if tg.project %}
+                      <a href="{{ url_for('ver_proyecto', project_id=tg.project.id) }}">{{ tg.project.name }}</a>
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </td>
+                  <td data-label="Estado">
+                    <span class="status-badge status-{{ tg.status|lower|replace(' ', '-') }}">
+                      {{ tg.status }}
+                    </span>
+                  </td>
+                  <td data-label="Prioridad">
+                    <span class="status-badge prioridad-{{ tg.prioridad|lower|replace(' ', '-') }}">
+                      {{ tg.prioridad }}
+                    </span>
+                  </td>
+                  <td data-label="Fecha Límite">
+                    {{ tg.fecha_limite.strftime('%Y-%m-%d') if tg.fecha_limite else 'N/A' }}
+                  </td>
+                  <td data-label="Progreso">
+                    {# Calculamos el porcentaje redondeado a entero #}
+                    {% set pct_tg = (
+                         (tg.porcentaje_avance if tg.porcentaje_avance is not none else tg.avance_automatico)
+                         | float
+                       ) | round(0) %}
+                    <div class="progress-bar-container">
+                      {# Si es 100% o más, usamos la clase “green-bar”. #}
+                      <div class="progress-bar {% if pct_tg >= 100 %}green-bar{% endif %}"
+                           style="width: {{ pct_tg }}%;"
+                      >
+                        {# Forzamos el porcentaje siempre centrado e en blanco #}
+                        <span class="progress-text-inner">{{ pct_tg }}%</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td data-label="Acciones">
+                    <a href="{{ url_for('ver_tarea_general', tarea_general_id=tg.id) }}"
+                       class="button btn-sm btn-info">
+                      <i class="material-icons-outlined">visibility</i>
+                      Ver Tarea
+                    </a>
+                    {# Si quieres añadir botones de editar/eliminar, agrégalos aquí #}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state-message">
+          No hay tareas generales asignadas directamente a esta área.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card neon-border mt-4">
+    <div class="card-header">
+      <h3>Participantes del Área</h3>
+    </div>
+    <div class="card-body">
+      {% if users_in_area %}
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nombre de Usuario</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in users_in_area %}
+                <tr>
+                  <td data-label="Usuario">{{ user.username.replace('_',' ').title() }}</td>
+                  <td data-label="Email">{{ user.email }}</td>
+                  <td data-label="Rol">{{ user.role|capitalize }}</td>
+                  <td data-label="Acciones">
+                    <a href="{{ url_for('ver_perfil_usuario', user_id=user.id) }}"
+                       class="button btn-sm btn-secondary">
+                      <i class="material-icons-outlined">person</i> Ver Perfil
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state-message">
+          No hay usuarios asignados directamente a esta área.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="back-to-dashboard-container button-group mt-4">
+    <a href="{{ url_for('dashboard') }}" class="button btn-secondary">
+      <i class="material-icons-outlined">arrow_back</i> Volver al Dashboard
+    </a>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

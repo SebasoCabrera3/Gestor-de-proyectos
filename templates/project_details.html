@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalles del Proyecto: {{ project.name }}{% endblock %}
+
+{% block content %}
+  <h1 class="page-title">{{ project.name }}</h1>
+  <p class="project-subtitle">Gestión detallada del proyecto</p>
+
+  <div class="main-content-grid">
+    <div class="grid-column-left">
+
+      <!-- Información General -->
+      <div class="card project-info-card neon-border">
+        <div class="card-header"><h3>Información General</h3></div>
+        <div class="card-body">
+          <table class="project-info-table">
+            <tbody>
+              <tr>
+                <th>Descripción:</th>
+                <td>{{ project.description or 'Sin descripción' }}</td>
+              </tr>
+              <tr>
+                <th>Fecha de Inicio:</th>
+                <td>{{ project.start_date.strftime('%Y-%m-%d') if project.start_date else 'No especificada' }}</td>
+              </tr>
+              <tr>
+                <th>Fecha Estimada de Fin:</th>
+                <td>{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else 'No especificada' }}</td>
+              </tr>
+              <tr>
+                <th>Estado:</th>
+                <td>
+                  <span class="status-badge status-{{ project.status|lower|replace(' ', '-') }}{% if project.is_delayed %} status-retrasada-oro{% endif %}">
+                    {{ project.current_display_status }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th>Creado el:</th>
+                <td>{{ project.date_created.strftime('%Y-%m-%d %H:%M') }}</td>
+              </tr>
+              <tr>
+                <th>Creado por:</th>
+                <td>{{ project.creator.username.replace('_',' ').title() if project.creator else 'N/A' }}</td>
+              </tr>
+
+              {# Avance Proyecto - Promedio Simple de TG #}
+              <tr>
+                <th>Avance Global (promedio simple TG):</th>
+                <td>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ avance_proy_simple }}%; ">
+                      {% if avance_proy_simple > 15 %}
+                        <span class="progress-text-inner">{{ avance_proy_simple }}%</span>
+                      {% endif %}
+                    </div>
+                    {% if avance_proy_simple <= 15 %}
+                      <span class="progress-text">{{ avance_proy_simple }}%</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+
+              {# Avance Proyecto - Promedio Ponderado por Subtareas #}
+              <tr>
+                <th>Avance Global (ponderado por subtareas):</th>
+                <td>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ avance_proy_ponderado }}%; ">
+                      {% if avance_proy_ponderado > 15 %}
+                        <span class="progress-text-inner">{{ avance_proy_ponderado }}%</span>
+                      {% endif %}
+                    </div>
+                    {% if avance_proy_ponderado <= 15 %}
+                      <span class="progress-text">{{ avance_proy_ponderado }}%</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card-footer actions-footer">
+          <div class="button-group">
+            {% if current_user.role in ['supervisor','admin'] %}
+              <a href="{{ url_for('editar_proyecto', project_id=project.id) }}" class="button btn-primary">Editar Proyecto</a>
+              <form action="{{ url_for('eliminar_proyecto', project_id=project.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar este proyecto?');">
+                <button type="submit" class="button btn-danger">Eliminar Proyecto</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tareas Generales del Proyecto -->
+      {% set total_tg = tareas_generales|length %}
+      <div class="card project-tasks-card neon-border">
+        <div class="card-header"><h3>Tareas del Proyecto ({{ total_tg }})</h3></div>
+        <div class="card-body">
+          {% if tareas_generales %}
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Tarea</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Prioridad</th>
+                    <th>Área</th>
+                    <th>Fecha Límite</th>
+                    <th>Progreso</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for tg in tareas_generales %}
+                    <tr>
+                      <td>
+                        <a href="{{ url_for('ver_tarea_general', tarea_general_id=tg.id) }}">
+                          {{ tg.title }}
+                        </a>
+                      </td>
+                      <td>{{ tg.description or 'Sin descripción' }}</td>
+                      <td>
+                        <span class="status-badge status-{{ tg.status|lower|replace(' ', '-') }}">{{ tg.status }}</span>
+                      </td>
+                      <td>
+                        <span class="status-badge prioridad-{{ tg.prioridad|lower|replace(' ', '-') }}">{{ tg.prioridad or 'Media' }}</span>
+                      </td>
+                      <td>
+                        {% if tg.area %}
+                          <a href="{{ url_for('ver_area', area_id=tg.area.id) }}">{{ tg.area.name }}</a>
+                        {% else %}
+                          N/A
+                        {% endif %}
+                      </td>
+                      <td>{{ tg.fecha_limite.strftime('%Y-%m-%d') if tg.fecha_limite else 'N/A' }}</td>
+
+                      {# Progreso de TG: utilizamos la propiedad avance_automatico #}
+                      <td>
+                        {% set pct_tg = tg.avance_automatico|round(0) %}
+                        <div class="progress-bar-container">
+                          <div class="progress-bar" style="width: {{ pct_tg }}%; ">
+                            {% if pct_tg > 15 %}
+                              <span class="progress-text-inner">{{ pct_tg }}%</span>
+                            {% endif %}
+                          </div>
+                          {% if pct_tg <= 15 %}
+                            <span class="progress-text">{{ pct_tg }}%</span>
+                          {% endif %}
+                        </div>
+                      </td>
+
+                      <td>
+                        {% if current_user.role in ['supervisor','admin'] %}
+                          {# Asegúrate de que existan estas rutas en app.py #}
+                          <a href="{{ url_for('editar_tarea_general', tarea_general_id=tg.id) }}" class="button btn-sm btn-info">Editar</a>
+                          <form action="{{ url_for('eliminar_tarea_general', tarea_general_id=tg.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar esta tarea general?');">
+                            <button type="submit" class="button btn-sm btn-danger">Eliminar</button>
+                          </form>
+                        {% else %}
+                          <a href="{{ url_for('ver_tarea_general', tarea_general_id=tg.id) }}" class="button btn-sm btn-info">Ver</a>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p class="empty-state-message">No hay tareas generales para este proyecto aún.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+
+  <div class="back-to-dashboard-container button-group mt-4">
+    {% if current_user.role in ['supervisor','admin'] %}
+      <a href="{{ url_for('nueva_tarea_general', project_id=project.id) }}" class="button btn-primary">
+         + Nueva Tarea General
+      </a>
+    {% endif %}
+    <a href="{{ url_for('dashboard') }}" class="button btn-secondary">
+      ← Volver al Dashboard
+    </a>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}
+
+{% block styles %}
+  {{ super() }}
+  <style>
+    /* =========================== */
+    /* BARRA DE PROGRESO MEJORADA   */
+    /* =========================== */
+    .progress-bar-container {
+      background-color: #2c3340;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      height: 22px;
+      min-width: 75px;
+    }
+    .progress-bar-container .progress-bar {
+      background-color: #0dc878;
+      height: 100%;
+      transition: width 0.5s ease-in-out;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .progress-bar-container .progress-text {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #ffffff;
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    .progress-bar-container:hover .progress-bar {
+      filter: brightness(1.1);
+    }
+
+    /* =========================== */
+    /* TABLA DE DATOS              */
+    /* =========================== */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    .data-table th,
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #2c3340;
+      color: #e0e6f0;
+      vertical-align: middle;
+    }
+    .data-table thead th {
+      background-color: #161c28;
+      color: #00d0ff;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .data-table tbody tr:hover {
+      background-color: #1e2533;
+    }
+    .data-table a {
+      color: #00d0ff;
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .data-table a:hover {
+      text-decoration: underline;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: white;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .status-pendiente    { background-color: #ffc107; }
+    .status-en-ejecución { background-color: #0dc878; }
+    .status-finalizado   { background-color: #28a745; }
+    .status-suspendido   { background-color: #6c757d; }
+    .status-cancelado    { background-color: #dc3545; }
+
+    /* =========================== */
+    /* BOTONES Y OTROS             */
+    /* =========================== */
+    .button-group .button {
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+      transition: transform 0.2s ease-in-out;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .button-group .button:hover {
+      transform: translateY(-2px);
+    }
+    .button.btn-sm {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.875rem;
+    }
+    .empty-state-message {
+      color: #ffffff80;
+      font-style: italic;
+    }
+    .neon-border {
+      border: 2px solid #00d0ff;
+      border-radius: 8px;
+    }
+    .mt-4 { margin-top: 1.5rem; }
+  </style>
+{% endblock %}

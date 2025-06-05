@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Selecciona tu Rol – Gestor de Proyectos{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <style>
+    /* =================== Overrides específicos para roles =================== */
+    /* Elimina por completo el wrapper container y sus efectos */
+    .container.app-container {
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 auto !important;
+      border: none !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+    }
+    .container.app-container::before,
+    .container.app-container::after {
+      display: none !important;
+    }
+    
+    /* Remueve estilos genéricos de <section> en esta página */
+    .roles-page {
+      margin: 0 !important;
+      padding: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+      width: 100% !important;
+      max-width: none !important;
+      min-height: calc(100vh - 80px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .roles-page::before,
+    .roles-page::after {
+      display: none !important;
+    }
+
+    /* Grid responsivo totalmente centrado */
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-xxl);
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 var(--space-md);
+    }
+
+    /* Tarjetas galácticas mejoradas */
+    .role-card {
+      background: rgba(12,20,38,0.95);
+      border-radius: var(--border-radius-large);
+      box-shadow: 0 0 20px rgba(0,208,255,0.7), var(--shadow-deep);
+      padding: var(--space-lg);
+      transition: transform 0.4s var(--transition-timing-function), box-shadow 0.4s var(--transition-timing-function);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+    }
+    .role-card:hover {
+      transform: translateY(-10px) rotateX(6deg);
+      box-shadow: 0 0 30px rgba(0,208,255,0.9), var(--shadow-deep);
+    }
+
+    /* Logo con pulso y escala al hover */
+    .role-logo {
+      width: 100px;
+      height: 100px;
+      margin-bottom: var(--space-md);
+      filter: drop-shadow(0 0 15px var(--color-accent-blue-vibrant));
+      transition: transform 0.4s var(--transition-timing-function);
+    }
+    .role-card:hover .role-logo {
+      transform: scale(1.2) rotate(5deg);
+    }
+
+    /* Título con subrayado neón animado */
+    .role-title {
+      color: var(--color-text-highlight);
+      font-size: 1.6rem;
+      font-weight: 900;
+      text-shadow: 0 0 12px var(--color-accent-blue-vibrant);
+      margin-top: var(--space-xs);
+      position: relative;
+    }
+    .role-title::after {
+      content: '';
+      width: 80px;
+      height: 4px;
+      background: var(--color-accent-blue-vibrant);
+      display: block;
+      margin: var(--space-xs) auto 0;
+      box-shadow: 0 0 8px var(--color-accent-blue-vibrant);
+      transition: width 0.4s var(--transition-timing-function);
+    }
+
+    /* Oculta footer en esta vista */
+    .main-footer {
+      display: none !important;
+    }
+      /* ===== Elimina cualquier sombra o recuadro de fondo ===== */
+    .roles-page {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    .roles-page::before,
+    .roles-page::after {
+      display: none !important;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<section class="roles-page">
+  <div class="roles-grid">
+    <a href="{{ url_for('login', role='lider_area') }}" class="role-card">
+      <img src="{{ url_for('static', filename='images/lider-area-logo.png') }}" alt="Líder de Área" class="role-logo">
+      <div class="role-title">Líder de Área</div>
+    </a>
+
+    <a href="{{ url_for('login', role='supervisor') }}" class="role-card">
+      <img src="{{ url_for('static', filename='images/supervisor-logo.png') }}" alt="Supervisor" class="role-logo">
+      <div class="role-title">Supervisor</div>
+    </a>
+
+    <a href="{{ url_for('login', role='apoyo') }}" class="role-card">
+      <img src="{{ url_for('static', filename='images/apoyo-logo.png') }}" alt="Apoyo" class="role-logo">
+      <div class="role-title">Apoyo</div>
+    </a>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

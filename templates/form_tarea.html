@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ action }} Tarea{% endblock %}
+
+{% block content %}
+<div class="form-container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashes-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <h1 class="form-page-title">{{ action }} Tarea</h1>
+
+    <form method="POST" class="task-form">
+        {{ form.csrf_token }}
+
+        <div class="form-group">
+            {{ form.title.label(class="form-label") }}
+            {# Agregando maxlength para validación en el cliente. Ajusta el número según tu modelo/WTForms #}
+            {{ form.title(class="form-control", placeholder="Título de la tarea", maxlength="200
+") }}
+            {% if form.title.errors %}
+                <ul class="errors">
+                    {% for error in form.title.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.description.label(class="form-label") }}
+            {# Agregando maxlength para validación en el cliente. Ajusta el número según tu modelo/WTForms #}
+            {{ form.description(class="form-control", rows="4", placeholder="Describe la tarea brevemente", maxlength="500") }}
+            {% if form.description.errors %}
+                <ul class="errors">
+                    {% for error in form.description.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.due_date.label(class="form-label") }}
+            {# Aseguramos que el tipo sea 'date' para el selector de calendario #}
+            {{ form.due_date(class="form-control date-input", type="date") }}
+            {% if form.due_date.errors %}
+                <ul class="errors">
+                    {% for error in form.due_date.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.status.label(class="form-label") }}
+            {{ form.status(class="form-control select-styled") }} {# Añadido 'select-styled' para CSS #}
+            {% if form.status.errors %}
+                <ul class="errors">
+                    {% for error in form.status.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.prioridad.label(class="form-label") }}
+            {{ form.prioridad(class="form-control select-styled") }} {# Añadido 'select-styled' para CSS #}
+            {% if form.prioridad.errors %}
+                <ul class="errors">
+                    {% for error in form.prioridad.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.assigned_user.label(class="form-label") }}
+            {{ form.assigned_user(class="form-control select-styled") }} {# Añadido 'select-styled' para CSS #}
+            {% if form.assigned_user.errors %}
+                <ul class="errors">
+                    {% for error in form.assigned_user.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        {# Este campo solo debería aparecer si la tarea ya existe y estamos editando #}
+        {% if action == 'Editar' and form.porcentaje_avance %}
+        <div class="form-group">
+            {{ form.porcentaje_avance.label(class="form-label") }}
+            {# Se asume que porcentaje_avance es un IntegerField o FloatField en tu formulario WTForms #}
+            {{ form.porcentaje_avance(class="form-control range-input", type="range", min="0", max="100", oninput="this.nextElementSibling.value = this.value + '%'") }}
+            <output class="range-value">{{ form.porcentaje_avance.data | default(0) }}%</output>
+            {% if form.porcentaje_avance.errors %}
+                <ul class="errors">
+                    {% for error in form.porcentaje_avance.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="form-actions button-group">
+            <button type="submit" class="button btn-primary">{{ action }} Tarea</button>
+            {# Volver al proyecto asociado, es más específico que solo al dashboard #}
+            {# Asumiendo que 'proyecto' está disponible en el contexto si vienes de un proyecto #}
+            {% if proyecto %}
+                <a href="{{ url_for('ver_proyecto', project_id=proyecto.id) }}" class="button btn-secondary">Cancelar</a>
+            {% else %}
+                <a href="{{ url_for('dashboard') }}" class="button btn-secondary">Cancelar</a>
+            {% endif %}
+        </div>
+
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {# Script para actualizar el valor del rango de progreso #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rangeInput = document.querySelector('.range-input');
+            const rangeValueOutput = document.querySelector('.range-value');
+
+            if (rangeInput && rangeValueOutput) {
+                // Sincroniza el valor inicial al cargar la página
+                rangeValueOutput.value = rangeInput.value + '%';
+
+                // Actualiza el valor cuando el input cambia
+                rangeInput.addEventListener('input', function() {
+                    rangeValueOutput.textContent = this.value + '%';
+                });
+            }
+        });
+    </script>
+{% endblock %}

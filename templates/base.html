@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sistema estratégico para gestión y seguimiento de proyectos.">
+  <meta name="keywords" content="gestión, proyectos, urbanismo, seguimiento, flask">
+  <meta name="author" content="Oficina de Proyectos Estratégicos">
+
+  <title>{% block title %}Dashboard{% endblock %} | Sistema de Proyectos GPE</title>
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:title" content="Sistema de Proyectos GPE">
+  <meta property="og:description" content="Gestiona y organiza tus proyectos estratégicos con eficiencia.">
+  <meta property="og:image" content="{{ url_for('static', filename='images/og-image.png') }}">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sistema de Proyectos GPE">
+  <meta name="twitter:description" content="Sistema de proyectos institucionales eficiente.">
+  <meta name="twitter:image" content="{{ url_for('static', filename='images/twitter-card-image.png') }}">
+
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" />
+
+  <!-- Tipografía -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Preload CSS -->
+  <link rel="preload" href="{{ url_for('static', filename='css/style.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></noscript>
+
+  <!-- Estilos críticos -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #0d1117;
+      color: #ffffff;
+      font-family: 'Montserrat', sans-serif;
+      overflow-x: hidden;
+    }
+
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #0d1117;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+    }
+
+    .loader-container {
+      text-align: center;
+      color: #00cfff;
+    }
+
+    .loader-logo {
+      width: 80px;
+      height: auto;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 6px rgba(0, 208, 255, 0.6));
+    }
+
+    .flash-messages .alert {
+      padding: 12px 20px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      background-color: #1d3557;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(0, 208, 255, 0.3);
+      position: relative;
+      transition: opacity 0.5s ease;
+    }
+
+    .flash-messages .alert.fade-out {
+      opacity: 0;
+    }
+
+    .close-alert-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+
+  {% block head_styles %}{% endblock %}
+  {% block head %}{% endblock %}
+</head>
+
+<body class="theme-dark">
+  <!-- Pantalla de carga -->
+  <div id="loading-screen">
+    <div class="loader-container">
+      <img src="{{ url_for('static', filename='images/Logo.png') }}" alt="Cargando..." class="loader-logo">
+      <p>Cargando Sistema de Proyectos GPE...</p>
+    </div>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="site-wrapper" id="main-wrapper" style="visibility: hidden;">
+    <header class="jira-style-header" role="banner">
+      <div class="header-left">
+        <a href="{{ current_user.is_authenticated and url_for('dashboard') or url_for('index') }}" class="logo-link" aria-label="Inicio">
+          <img src="{{ url_for('static', filename='images/Logo.png') }}" alt="Logo del Sistema de Proyectos" class="header-logo" />
+        </a>
+      </div>
+
+      <nav class="header-center-nav" aria-label="Navegación principal">
+        {% if current_user.is_authenticated %}
+          <ul class="nav-list">
+            <li>
+              <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}>
+                Dashboard
+              </a>
+            </li>
+
+            {% if current_user.role == 'supervisor' %}
+              <li>
+                <a href="{{ url_for('crear_proyecto') }}" {% if request.endpoint == 'crear_proyecto' %}aria-current="page"{% endif %}>
+                  Crear Proyecto
+                </a>
+              </li>
+            {% endif %}
+
+            {# Mostrar "Gestionar Usuarios" tanto para supervisor como para encargado #}
+            {% if current_user.role in ['supervisor', 'encargado'] %}
+              <li>
+                <a href="{{ url_for('gestionar_usuarios') }}" {% if request.endpoint == 'gestionar_usuarios' %}aria-current="page"{% endif %}>
+                  Gestionar Usuarios
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        {% endif %}
+      </nav>
+
+      <nav class="header-right" aria-label="Navegación de usuario">
+        <ul class="nav-list">
+          {% if current_user.is_authenticated %}
+            <li class="welcome-message">Hola, {{ current_user.username.replace('_', ' ').title() }}!</li>
+            <li><a href="{{ url_for('logout') }}" class="button btn-secondary">Cerrar Sesión</a></li>
+          {% else %}
+            <li><a href="{{ url_for('roles') }}" class="button btn-primary">Iniciar Sesión</a></li>
+            <li><a href="{{ url_for('register_apoyo') }}" class="button btn-secondary">Registrarse</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </header>
+
+    <div class="container app-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages" role="alertdialog" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <span>{{ message }}</span>
+                <button type="button" class="close-alert-btn" aria-label="Cerrar mensaje">&times;</button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <main id="main-content" class="content-area" role="main">
+        {% block content %}
+          <div class="empty-content-notice">
+            <p class="text-muted">No hay contenido disponible por el momento.</p>
+          </div>
+        {% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  {% block scripts %}
+    <script>
+      window.addEventListener('load', () => {
+        const loading = document.getElementById("loading-screen");
+        const main = document.getElementById("main-wrapper");
+        if (loading) loading.style.opacity = "0";
+        setTimeout(() => {
+          if (loading) loading.style.display = "none";
+          if (main) main.style.visibility = "visible";
+        }, 300);
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const alerts = document.querySelectorAll('.flash-messages .alert');
+        alerts.forEach(alertEl => {
+          const autoDismissTimer = setTimeout(() => {
+            alertEl.classList.add('fade-out');
+          }, 4500);
+
+          alertEl.addEventListener('transitionend', () => {
+            if (alertEl.classList.contains('fade-out')) {
+              alertEl.remove();
+            }
+          });
+
+          const closeBtn = alertEl.querySelector('.close-alert-btn');
+          if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+              clearTimeout(autoDismissTimer);
+              alertEl.classList.add('fade-out');
+            });
+          }
+        });
+      });
+    </script>
+    {% block page_scripts %}{% endblock %}
+  {% endblock %}
+</body>
+</html>

@@ -1,0 +1,26 @@
+{# login.html (fragmento actualizado) #}
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+{% block content %}
+<section class="auth-section">
+  <h1>Iniciar Sesión</h1>
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      {{ form.username_or_email.label }}
+      {{ form.username_or_email(class="form-control") }}
+    </div>
+    <div class="form-group">
+      {{ form.password.label }}
+      {{ form.password(class="form-control") }}
+    </div>
+    <div class="form-group">
+      {{ form.submit(class="button btn-primary") }}
+    </div>
+  </form>
+  {% if role == 'apoyo' %}
+    <p class="small-text">¿No tienes cuenta? <a href="{{ url_for('register_apoyo') }}">Regístrate aquí</a></p>
+  {% endif %}
+</section>
+{% endblock %}

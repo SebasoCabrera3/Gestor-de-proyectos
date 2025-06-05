@@ -1,0 +1,94 @@
+{# templates/_macros.html #}
+
+{% macro render_sidebar_nav(current_user, request, proyectos, has_gestionar_usuarios_route, caller_id) %}
+    <ul class="nav flex-column sidebar-nav mt-3">
+        {% if current_user.is_authenticated %}
+        <li class="nav-item">
+            <a class="nav-link text-white py-2 {% if request.endpoint == 'dashboard' %}active bg-primary rounded{% endif %}" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-th-large me-2"></i> Dashboard
+            </a>
+        </li>
+        {% if current_user.role == 'supervisor' %}
+        <li class="nav-item">
+            <a class="nav-link text-white py-2 {% if request.endpoint == 'crear_proyecto' %}active bg-primary rounded{% endif %}" href="{{ url_for('crear_proyecto') }}">
+                <i class="fas fa-folder-plus me-2"></i> Crear Proyecto
+            </a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link text-white py-2 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#submenuProyectos{{ caller_id }}" role="button" aria-expanded="false" aria-controls="submenuProyectos{{ caller_id }}">
+                <span><i class="fas fa-project-diagram me-2"></i> Mis Proyectos</span> <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="collapse" id="submenuProyectos{{ caller_id }}">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                    <li><a href="#" class="link-light rounded py-1">Todos los Proyectos</a></li>
+                    <li><a href="#" class="link-light rounded py-1">Proyectos Activos</a></li>
+                    <li><a href="#" class="link-light rounded py-1">Proyectos Archivados</a></li>
+                    {% if proyectos %}
+                        {% for project in proyectos %}
+                            <li>
+                                <a href="{{ url_for('ver_proyecto', project_id=project.id) }}" class="link-light rounded py-1">
+                                    {{ project.nombre }}
+                                </a>
+                                {% if project.tareas_generales %}
+                                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                                    {% for tg in project.tareas_generales %}
+                                        <li>
+                                            <a href="{{ url_for('ver_tarea_general', tarea_general_id=tg.id) }}" class="link-light rounded py-1">
+                                                {{ tg.nombre }}
+                                            </a>
+                                            {% if tg.subtareas %}
+                                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                                                {% for sub in tg.subtareas %}
+                                                    <li><a href="{{ url_for('ver_subtarea', subtarea_id=sub.id) }}" class="link-light rounded py-1">{{ sub.nombre }}</a></li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    {% endif %}
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-white py-2 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#submenuTareas{{ caller_id }}" role="button" aria-expanded="false" aria-controls="submenuTareas{{ caller_id }}">
+                <span><i class="fas fa-tasks me-2"></i> Tareas</span> <i class="fas fa-chevron-down"></i>
+            </a>
+            <div class="collapse" id="submenuTareas{{ caller_id }}">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                    <li><a href="#" class="link-light rounded py-1">Mis Tareas</a></li>
+                    <li><a href="#" class="link-light rounded py-1">Tareas Asignadas</a></li>
+                    <li><a href="#" class="link-light rounded py-1">Tareas Completadas</a></li>
+                </ul>
+            </div>
+        </li>
+        {% if current_user.role == 'supervisor' and has_gestionar_usuarios_route %}
+        <li class="nav-item">
+            <a class="nav-link text-white py-2 {% if request.endpoint == 'gestionar_usuarios' %}active bg-primary rounded{% endif %}" href="{{ url_for('gestionar_usuarios') }}">
+                <i class="fas fa-users-cog me-2"></i> Gestión Usuarios
+            </a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link text-white py-2" href="#">
+                <i class="fas fa-cog me-2"></i> Configuración
+            </a>
+        </li>
+        {% else %} {# Usuario no autenticado #}
+        <li class="nav-item">
+            <a class="nav-link text-white py-2 {% if request.endpoint == 'roles' %}active bg-primary rounded{% endif %}" href="{{ url_for('roles') }}">
+                <i class="fas fa-sign-in-alt me-2"></i> Iniciar Sesión
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-white py-2 {% if request.endpoint == 'register_apoyo' %}active bg-primary rounded{% endif %}" href="{{ url_for('register_apoyo') }}">
+                <i class="fas fa-user-plus me-2"></i> Registrarse
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+{% endmacro %}

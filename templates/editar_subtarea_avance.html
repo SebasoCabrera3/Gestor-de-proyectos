@@ -1,0 +1,73 @@
+{# templates/editar_subtarea_avance.html #}
+{% extends "base.html" %}
+{% block content %}
+  <h1 class="page-title">Subir Avance/Aporte: {{ subtarea.title }}</h1>
+  <p class="page-subtitle">
+    Proyecto:
+    <a href="{{ url_for('ver_proyecto', project_id=subtarea.tarea_general.project.id) }}">
+      {{ subtarea.tarea_general.project.name }}
+    </a>
+    |
+    Tarea General:
+    <a href="{{ url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id) }}">
+      {{ subtarea.tarea_general.title }}
+    </a>
+  </p>
+
+  <div class="card neon-border mt-3">
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        {# —============== Avance (%) ==============— #}
+        <div class="form-group mb-4">
+          {{ form.avance.label(class="form-label") }}
+          {{ form.avance(
+              class="custom-number",
+              min="0", max="100", step="1",
+              placeholder="0–100"
+          ) }}
+        </div>
+
+        {# —========== Documento de evidencia ==========— #}
+        <div class="form-group mb-4 file-wrapper">
+          {# El input real, invisible #}
+          {{ form.documento(class="custom-file-input", id="fileInput") }}
+          {# La etiqueta que actuará como botón #}
+          <label for="fileInput" class="custom-file-label">Seleccionar archivo</label>
+          {# Lugar donde mostraremos el nombre seleccionado #}
+          <span id="file-name-display" class="file-name">
+            {% if subtarea.documento_aporte %}
+              Archivo actual: {{ subtarea.documento_aporte }}
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="mt-4">
+          <button type="submit" class="button btn-primary">{{ form.submit.label.text }}</button>
+          <a href="{{ url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id) }}"
+             class="button btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    // Cuando el usuario seleccione un archivo, actualizamos el texto del <span>
+    document.addEventListener('DOMContentLoaded', function() {
+      const fileInput = document.getElementById('fileInput');
+      const fileNameDisplay = document.getElementById('file-name-display');
+
+      fileInput.addEventListener('change', function() {
+        if (fileInput.files && fileInput.files.length > 0) {
+          fileNameDisplay.textContent = fileInput.files[0].name;
+        } else {
+          fileNameDisplay.textContent = ''; // O "Ningún archivo seleccionado"
+        }
+      });
+    });
+  </script>
+{% endblock %}

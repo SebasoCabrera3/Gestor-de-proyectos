@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Perfil de {{ user_profile.username.replace('_',' ').title() }}{% endblock %}
+
+{% block content %}
+  {# --- Mensajes flash si los hubiera --- #}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <h1 class="page-title">Perfil de Usuario: {{ user_profile.username.replace('_',' ').title() }}</h1>
+
+  <div class="card neon-border mt-4">
+    <div class="card-header">
+      <h3>Información de Contacto y Rol</h3>
+    </div>
+    <div class="card-body">
+      <table class="project-info-table"> {# Reutilizando estilo de tabla de detalles #}
+        <tbody>
+          <tr>
+            <th>Nombre de Usuario:</th>
+            <td>{{ user_profile.username.replace('_',' ').title() }}</td>
+          </tr>
+          <tr>
+            <th>Correo Electrónico:</th>
+            <td>{{ user_profile.email }}</td>
+          </tr>
+          <tr>
+            <th>Rol:</th>
+            <td>{{ user_profile.role|capitalize }}</td>
+          </tr>
+          {% if user_profile.area %}
+          <tr>
+            <th>Área Asignada:</th>
+            <td>
+              <a href="{{ url_for('ver_area', area_id=user_profile.area.id) }}">{{ user_profile.area.name }}</a>
+            </td>
+          </tr>
+          {% endif %}
+          {% if user_profile.leader %}
+          <tr>
+            <th>Líder de Área (si aplica):</th>
+            <td>{{ user_profile.leader.username.replace('_',' ').title() }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    {# Podrías añadir un footer a la tarjeta con un botón para editar perfil si el current_user es el mismo user_profile o un admin #}
+    {# Por ejemplo:
+    {% if current_user.id == user_profile.id or current_user.role == 'supervisor' %}
+    <div class="card-footer actions-footer">
+        <a href="{{ url_for('editar_perfil_usuario', user_id=user_profile.id) }}" class="button btn-primary">Editar Perfil</a>
+    </div>
+    {% endif %}
+    #}
+  </div>
+
+  {% if user_profile.role in ['apoyo', 'encargado'] %}
+  <div class="card neon-border mt-4">
+    <div class="card-header">
+      <h3>Subtareas Asignadas a {{ user_profile.username.replace('_',' ').title() }}</h3>
+    </div>
+    <div class="card-body">
+      {% if subtasks_assigned %}
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Subtarea</th>
+                <th>Tarea General</th>
+                <th>Proyecto</th>
+                <th>Estado</th>
+                <th>Prioridad</th>
+                <th>Fecha Límite</th>
+                <th>Avance (%)</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sub in subtasks_assigned %}
+                <tr>
+                  <td data-label="Subtarea">{{ sub.title }}</td>
+                  <td data-label="Tarea General">
+                    <a href="{{ url_for('ver_tarea_general', tarea_general_id=sub.tarea_general_id) }}">
+                      {{ sub.tarea_general.title if sub.tarea_general else 'N/A' }}
+                    </a>
+                  </td>
+                  <td data-label="Proyecto">
+                    {% if sub.tarea_general and sub.tarea_general.project %}
+                      <a href="{{ url_for('ver_proyecto', project_id=sub.tarea_general.project.id) }}">
+                        {{ sub.tarea_general.project.name }}
+                      </a>
+                    {% else %}
+                      N/A
+                    {% endif %}
+                  </td>
+                  <td data-label="Estado">
+                    <span class="status-badge status-{{ sub.status|lower|replace(' ', '-') }}">{{ sub.status }}</span>
+                  </td>
+                  <td data-label="Prioridad">
+                     <span class="status-badge prioridad-{{ sub.prioridad|lower|replace(' ', '-') }}">{{ sub.prioridad }}</span>
+                  </td>
+                  <td data-label="Fecha Límite">{{ sub.fecha_limite.strftime('%Y-%m-%d') if sub.fecha_limite else 'N/A' }}</td>
+                  <td data-label="Avance (%)">
+                    <div class="progress-bar-container" style="min-width: 80px;">
+                      <div class="progress-bar" style="width: {{ sub.avance|default(0)|int }}%;">
+                        {% if (sub.avance|default(0)|int) > 15 %}
+                          <span class="progress-text-inner">{{ sub.avance|default(0)|int }}%</span>
+                        {% endif %}
+                      </div>
+                      {% if (sub.avance|default(0)|int) <= 15 %}
+                        <span class="progress-text">{{ sub.avance|default(0)|int }}%</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td data-label="Acciones">
+                    {# El usuario de apoyo puede editar su propia subtarea, o un supervisor/encargado #}
+                    {% if current_user.id == sub.assigned_user_id or current_user.role == 'supervisor' or (current_user.role == 'encargado' and current_user.area_id == sub.tarea_general.area_id if sub.tarea_general and sub.tarea_general.area else false) %}
+                      <a href="{{ url_for('editar_subtarea', subtarea_id=sub.id) }}" class="button btn-sm btn-edit">
+                        Actualizar Avance/Editar
+                      </a>
+                    {% else %}
+                       <span class="text-muted">Ver</span> {# O nada si no hay acción #}
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state-message">{{ user_profile.username.replace('_',' ').title() }} no tiene subtareas asignadas actualmente.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="back-to-dashboard-container button-group mt-4">
+    {# Botón para volver a la página anterior o al dashboard #}
+    {% if request.referrer and request.referrer != request.url %}
+        <a href="{{ request.referrer }}" class="button btn-secondary">
+            <i class="material-icons-outlined">arrow_back</i> Volver
+        </a>
+    {% else %}
+        <a href="{{ url_for('dashboard') }}" class="button btn-secondary">
+            <i class="material-icons-outlined">arrow_back</i> Volver al Dashboard
+        </a>
+    {% endif %}
+  </div>
+
+{% endblock %}

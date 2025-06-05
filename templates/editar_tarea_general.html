@@ -1,0 +1,89 @@
+{# templates/editar_tarea_general.html #}
+
+{% extends "base.html" %}
+{% block title %}Editar Tarea General{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Editar Tarea General: {{ tarea.title }}</h2>
+
+    {# Mensajes flash generales #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages"> {# Usando la clase que definimos en el CSS para mensajes flash #}
+                {% for category, message in messages %}
+                    {# Asegúrate que tu CSS tenga estilos para .alert.success, .alert.danger, etc. si usas estas categorías #}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {# Errores de validación del formulario #}
+    {% if form.errors %}
+        <div class="flash-messages"> {# Reutilizando el contenedor de mensajes flash para errores #}
+            <div class="alert alert-danger"> {# Clase específica para errores #}
+                <p><strong>Por favor, corrige los siguientes errores:</strong></p>
+                <ul>
+                    {% for field, error_list in form.errors.items() %}
+                        {% for error in error_list %}
+                            <li><strong>{{ form[field].label.text if form[field].label else field|capitalize }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+
+    <form method="POST" novalidate> {# Añadido novalidate para que la validación del navegador no interfiera con la de WTForms #}
+        {{ form.hidden_tag() }} {# Campo oculto CSRF #}
+
+        <div class="form-group">
+            {{ form.title.label(class="form-label") }} {# Usando la clase .form-label para consistencia #}
+            {{ form.title(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(class="form-control", rows="4") }}
+        </div>
+
+        {# === MODIFICACIÓN: Añadido campo para comentario_avance === #}
+        <div class="form-group">
+            {{ form.comentario_avance.label(class="form-label") }} 
+            {{ form.comentario_avance(class="form-control", rows="3", placeholder="Añade un comentario sobre el avance o cualquier observación...") }}
+        </div>
+        {# ====================================================== #}
+
+        <div class="form-group">
+            {{ form.fecha_limite.label(class="form-label") }}
+            {{ form.fecha_limite(class="form-control", type="date") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.prioridad.label(class="form-label") }}
+            {{ form.prioridad(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.status.label(class="form-label") }} {# Este campo ya estaba en tu HTML y lo añadimos al forms.py #}
+            {{ form.status(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+            {{ form.area_id.label(class="form-label") }} {# Tu comentario de corrección ya estaba bien #}
+            {{ form.area_id(class="form-control") }}
+        </div>
+
+        <div class="form-actions button-group"> {# Usando .form-actions y .button-group para consistencia de estilos #}
+            {# <button type="submit" class="button">Guardar Cambios</button> #}
+            {{ form.submit(class="button btn-primary") }} {# Usando el campo submit del formulario para el texto y consistencia #}
+            
+            <a href="{{ url_for('ver_proyecto', project_id=tarea.project.id if tarea.project else '#') }}" class="button btn-secondary">
+                {# Añadida comprobación por si tarea.project es None para evitar error #}
+                ← Volver al Proyecto
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

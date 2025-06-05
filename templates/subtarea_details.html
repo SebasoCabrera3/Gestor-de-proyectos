@@ -1,0 +1,415 @@
+{# templates/subtarea_details.html #}
+{% extends "base.html" %}
+
+{% block title %}Detalles de Subtarea: {{ subtarea.title }}{% endblock %}
+
+{% block content %}
+<div class="details-container">
+    <h2 class="page-title">Detalles de la Subtarea</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="project-info-table">
+                <tbody>
+                    <tr>
+                        <th style="width: 25%;">Título:</th>
+                        <td>{{ subtarea.title }}</td>
+                    </tr>
+                    <tr>
+                        <th>Descripción:</th>
+                        <td>{{ subtarea.description or 'Sin descripción' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Proyecto Asociado:</th>
+                        <td>
+                            {% if project %}
+                                {{ project.name }}
+                            {% else %}
+                                Sin proyecto
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Tarea General:</th>
+                        <td>
+                            {{ tarea_general.title if tarea_general else 'N/A' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Área Asignada:</th>
+                        <td>
+                            {{ tarea_general.area.name if tarea_general and tarea_general.area else 'Sin asignar' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Prioridad:</th>
+                        <td>
+                            <span class="status-badge prioridad-{{ subtarea.prioridad|lower }}">
+                                {{ subtarea.prioridad }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Fecha Límite:</th>
+                        <td>
+                            {{ subtarea.fecha_limite.strftime('%Y-%m-%d') if subtarea.fecha_limite else 'N/A' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td>
+                            <span class="status-badge status-{{ subtarea.status|lower|replace(' ', '-') }}">
+                                {{ subtarea.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Avance Validado:</th>
+                        <td>
+                            <div class="progress-bar-container" style="width: 100%; max-width: 300px;">
+                                <div class="progress-bar" style="width: {{ subtarea.avance_validado|default(0)|int }}%;">
+                                    <span class="progress-text-inner">{{ subtarea.avance_validado|default(0)|int }}%</span>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Asignado a:</th>
+                        <td>
+                            {{ subtarea.assigned_user.username.replace('_',' ').title() if subtarea.assigned_user else 'Sin asignar' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Documento Aporte:</th>
+                        <td>
+                            {% if subtarea.documento_aporte %}
+                                <a href="{{ url_for('uploaded_file', filename=subtarea.documento_aporte) }}" target="_blank" class="text-link">
+                                    {{ subtarea.documento_aporte }}
+                                </a>
+                            {% else %}
+                                <em class="text-muted">No hay documento subido</em>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Creada por:</th>
+                        <td>
+                            {{ subtarea.creator.username.replace('_',' ').title() if subtarea.creator else 'N/A' }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer actions-footer">
+            <div class="button-group">
+                {# Solo Supervisor o Encargado del área pueden editar/eliminar #}
+                {% if current_user.role == 'supervisor'
+                      or (current_user.role == 'encargado'
+                          and tarea_general
+                          and current_user.area_id == tarea_general.area_id) %}
+                    <a href="{{ url_for('editar_subtarea', subtarea_id=subtarea.id) }}"
+                       class="button btn-primary">
+                        Editar Subtarea
+                    </a>
+                    <form action="{{ url_for('eliminar_subtarea', subtarea_id=subtarea.id) }}"
+                          method="POST"
+                          style="display: inline-block;"
+                          onsubmit="return confirm('¿Eliminar esta subtarea?');">
+                        <button type="submit" class="button btn-danger">
+                            Eliminar Subtarea
+                        </button>
+                    </form>
+                {% endif %}
+
+                {# Botón para volver, siempre visible #}
+                {% if tarea_general %}
+                    <a href="{{ url_for('ver_tarea_general', tarea_general_id=tarea_general.id) }}"
+                       class="button btn-secondary">
+                        ← Volver a Detalles de Tarea General
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('dashboard') }}"
+                       class="button btn-secondary">
+                        ← Volver al Dashboard
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.role == 'apoyo' and subtarea.assigned_user_id == current_user.id %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h3>Subir Documento de Aporte</h3>
+                <p class="text-muted">Como usuario de Apoyo asignado, puedes subir un documento para esta subtarea.</p>
+            </div>
+            <div class="card-body">
+                {% if form_aporte %}
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('subir_documento_aporte', subtarea_id=subtarea.id) }}" class="form-basic">
+                        {{ form_aporte.csrf_token }}
+                        <div class="form-group">
+                            {{ form_aporte.documento.label }}
+                            {{ form_aporte.documento(class="form-control-file") }}
+                            {% if form_aporte.documento.errors %}
+                                <div class="text-danger">
+                                    {% for error in form_aporte.documento.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group form-actions">
+                            {{ form_aporte.submit(class="button btn-primary") }}
+                        </div>
+                    </form>
+                {% else %}
+                    <p class="text-muted">Formulario de aporte no disponible.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <style>
+        /* Estilos generales para el contenedor y las tarjetas */
+        .details-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .page-title {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #e0e6f0; /* Color del título */
+        }
+
+        .card {
+            background: #1e2533; /* Fondo oscuro de la tarjeta */
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+        }
+
+        .card-body {
+            color: #e0e6f0; /* Color del texto dentro de la tarjeta */
+            padding: 1.25rem 1.5rem;
+        }
+
+        .card-header {
+            background: #161c28; /* Fondo más oscuro para el encabezado de la tarjeta */
+            color: #00d0ff; /* Color del texto del encabezado */
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #2c3340;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            color: #00d0ff;
+        }
+
+        .card-footer {
+            background: #161c28; /* Fondo más oscuro para el pie de la tarjeta */
+            padding: 0.75rem 1.5rem;
+        }
+
+        /* Tabla de información del proyecto/tarea/subtarea */
+        .project-info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .project-info-table th,
+        .project-info-table td {
+            padding: 0.75rem 0;
+            text-align: left;
+            border-bottom: 1px solid #2c3340; /* Línea separadora entre filas */
+        }
+
+        .project-info-table th {
+            width: 25%; /* Ancho fijo para las etiquetas */
+            font-weight: 600;
+            color: #00d0ff; /* Color para las etiquetas (th) */
+        }
+
+        .project-info-table tr:last-child th,
+        .project-info-table tr:last-child td {
+            border-bottom: none; /* Eliminar borde inferior de la última fila */
+        }
+
+        /* Insignias de estado y prioridad */
+        .status-badge {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.9rem;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #1e2533; /* Color de texto oscuro para las insignias */
+        }
+
+        .prioridad-alta { background: #FF5252; } /* Rojo */
+        .prioridad-media { background: #FFC107; } /* Amarillo */
+        .prioridad-baja { background: #00E676; } /* Verde */
+
+        .status-en-ejecucion { background: #00d0ff; } /* Azul claro */
+        .status-finalizado { background: #4CAF50; } /* Verde */
+        .status-suspendido { background: #9E9E9E; } /* Gris */
+        .status-cancelado { background: #F44336; } /* Rojo */
+        .status-pendiente { background: #FFC107; } /* Amarillo */
+
+
+        /* Barra de progreso */
+        .progress-bar-container {
+            background: #2c3340; /* Fondo gris oscuro de la barra */
+            border-radius: 4px;
+            height: 14px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 4px;
+            max-width: 300px; /* Ancho máximo para la barra de progreso */
+        }
+
+        .progress-bar {
+            background: #00d0ff; /* Relleno azul de la barra */
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Alinea el texto a la derecha del relleno */
+            transition: width 0.3s ease-in-out; /* Animación suave del progreso */
+        }
+
+        .progress-text-inner {
+            font-size: 10px;
+            color: #ffffff; /* Color del texto del porcentaje */
+            font-weight: bold;
+            padding-right: 4px; /* Espacio para que el texto no toque el borde del relleno */
+            white-space: nowrap; /* Evita que el texto se rompa */
+        }
+
+        /* Grupo de botones */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        /* Estilos de botones (asumiendo que ya tienes estos en tu CSS global) */
+        .button {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #007bff; /* Azul */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-danger {
+            background-color: #dc3545; /* Rojo */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d; /* Gris */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .text-link {
+            color: #00d0ff; /* Azul claro */
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .text-link:hover {
+            text-decoration: underline;
+        }
+
+        .text-muted {
+            color: #999;
+            font-size: 0.875rem;
+        }
+
+        /* Estilos para el formulario de aporte */
+        .form-basic .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-basic label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #00d0ff;
+        }
+
+        .form-basic .form-control-file {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #2c3340;
+            border-radius: 4px;
+            background-color: #161c28;
+            color: #e0e6f0;
+            box-sizing: border-box;
+        }
+
+        .form-basic .form-control-file::file-selector-button {
+            background-color: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .form-basic .form-control-file::file-selector-button:hover {
+            background-color: #0056b3;
+        }
+
+        .form-basic .text-danger {
+            color: #FF5252;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-basic .form-actions {
+            text-align: right; /* Alinea el botón de submit a la derecha */
+            margin-top: 1.5rem;
+        }
+
+        .mt-4 { margin-top: 2rem; } /* Margen superior para las nuevas tarjetas */
+    </style>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {# Puedes añadir scripts JS aquí si fueran necesarios en el futuro #}
+{% endblock %}
