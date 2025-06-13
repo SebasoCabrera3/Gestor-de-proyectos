@@ -112,7 +112,7 @@ Estudiante de Arquitectura (noveno semestre)
 Pasantía en Movilidad Futura  
 Email: jaircabrera@unimayor.edu.co 
 
-© 2025 Sebastián Cabrera. Todos los derechos reservados.
+© 2025 Jair Sebastián Cabrera Molano. Todos los derechos reservados.
 
 ---
 
