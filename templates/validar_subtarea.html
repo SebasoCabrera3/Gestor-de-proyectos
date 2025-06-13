@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Validar Aporte – Subtarea: {{ subtarea.title }}{% endblock %}
+
+{% block content %}
+<div class="form-container fade-in">
+  <h1 class="page-title gradient-text">Validar Aporte de Subtarea</h1>
+
+  <p class="project-subtitle">Subtarea: <strong>{{ subtarea.title }}</strong></p>
+  <p class="text-muted">Proyecto: {{ subtarea.tarea_general.project.name }} | Tarea General: {{ subtarea.tarea_general.title }}</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} animate-pulse">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="card shadow-lg">
+    <div class="card-body">
+      <form method="POST">
+        {{ form.hidden_tag() }}
+
+        {% if subtarea.documento_aporte %}
+        <div class="form-group">
+          <label class="form-label">Documento Aportado:</label>
+          <p>
+            <a href="{{ url_for('uploaded_file', filename=subtarea.documento_aporte) }}" target="_blank">
+              {{ subtarea.documento_aporte }}
+            </a>
+          </p>
+        </div>
+        {% endif %}
+
+        <div class="form-group">
+          {{ form.avance_validado.label(class="form-label") }}
+          {{ form.avance_validado(class="form-control range-input", type="range", min="0", max="100", step="1", oninput="this.nextElementSibling.value = this.value + '%'" ) }}
+          <output class="range-value">{{ form.avance_validado.data|default(0) }}%</output>
+          {% if form.avance_validado.errors %}
+            <ul class="errors">{% for e in form.avance_validado.errors %}<li>{{ e }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+
+        <div class="form-actions button-group mt-4 text-center">
+          {{ form.submit(class="button btn-primary") }}
+          <a href="{{ url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id) }}" class="button btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const rangeInput = document.querySelector('.range-input');
+    const rangeValueOutput = document.querySelector('.range-value');
+    if (rangeInput && rangeValueOutput) {
+      rangeValueOutput.textContent = rangeInput.value + '%';
+      rangeInput.addEventListener('input', function() {
+        rangeValueOutput.textContent = this.value + '%';
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -232,6 +232,15 @@ class SubtareaForm(FlaskForm):
     submit = SubmitField('Guardar Cambios')
 
 
+
+class ValidarSubtareaForm(FlaskForm):
+    avance_validado = IntegerField('Avance Validado (%)', validators=[
+        NumberRange(min=0, max=100, message="El avance debe estar entre 0 y 100")
+    ])
+    observaciones = TextAreaField('Observaciones', validators=[Optional()])
+    submit = SubmitField('Validar')
+
+
 # -------------------------------------------------------------------
 # FORMULARIO PARA “APOYO” ACTUALIZAR SU AVANCE Y OPCIONALMENTE SUBIR EVIDENCIA
 # -------------------------------------------------------------------
@@ -244,8 +253,9 @@ class SubtareaAvanceAporteForm(FlaskForm):
     documento = FileField(
         'Documento de Evidencia (PDF, DOCX, XLSX)',
         validators=[
-            Optional(),  # Si el apoyo ya subió antes, podría no querer volver a subir.
+            Optional(),
             FileAllowed(['pdf', 'doc', 'docx', 'xlsx'], "Solo se permiten PDF/DOC/DOCX/XLSX.")
         ]
     )
+    observaciones = TextAreaField('Observaciones')  # ✅ NUEVO CAMPO AQUÍ
     submit = SubmitField('Guardar Avance/Aporte')

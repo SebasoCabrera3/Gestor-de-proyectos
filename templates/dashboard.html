@@ -166,7 +166,7 @@
                       {% endif %}
                     </td>
                     <td data-label="Estado Proyecto">
-                      <span class="status-badge status-{{ project.status|lower|replace(' ', '-') }}">{{ project.status }}</span>
+                      <span class="status-badge status-{{ project.estado|lower|replace(' ', '-') }}">{{ project.estado }}</span>
                     </td>
                     <td data-label="Fecha Fin Proyecto">
                       {{ project.end_date.strftime('%Y-%m-%d') if project.end_date else 'N/A' }}
@@ -175,7 +175,7 @@
                     <!-- BARRA DE PROGRESO PARA CADA PROYECTO -->
                     <td data-label="Avance (%)">
                       {% set avance_pct = project_progress_map.get(project.id, 0) %}
-                      <div class="progress-bar-container">
+                       <div class="progress-bar-container">
                         <div class="progress-bar" style="width: {{ avance_pct }}%;">
                           {% if avance_pct > 15 %}
                             <span class="progress-text-inner">{{ avance_pct }}%</span>
@@ -274,8 +274,8 @@
 
                     <!-- Columna: Estado -->
                     <td data-label="Estado">
-                      <span class="status-badge status-{{ tarea.status|lower|replace(' ', '-') }}">
-                        {{ tarea.status }}
+                      <span class="status-badge status-{{ tarea.estado|lower|replace(' ', '-') }}">
+                        {{ tarea.estado }}
                       </span>
                     </td>
 
@@ -355,7 +355,7 @@
                       {{ s.tarea_general.title }}
                     </td>
                     <td data-label="Estado">
-                      <span class="status-badge status-{{ s.status|lower|replace(' ', '-') }}">{{ s.status }}</span>
+                      <span class="status-badge status-{{ s.estado|lower|replace(' ', '-') }}">{{ s.estado }}</span>
                     </td>
                     <td data-label="Fecha Límite">
                       {% if s.fecha_limite %}
@@ -498,6 +498,8 @@
     .status-finalizado   { background-color: #28a745; }
     .status-suspendido   { background-color: #6c757d; }
     .status-cancelado    { background-color: #dc3545; }
+    .status-retrasado    { background-color: #dc3545; }
+
 
     /* =========================== */
     /* BOTONES Y OTROS             */

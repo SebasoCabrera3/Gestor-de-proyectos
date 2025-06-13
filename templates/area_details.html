@@ -1,10 +1,8 @@
-{# templates/area_details.html #}
 {% extends 'base.html' %}
 
 {% block title %}Detalles del Área: {{ area.name }}{% endblock %}
 
 {% block content %}
-  {# --- Mensajes flash si los hubiera para esta página --- #}
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="flash-messages">
@@ -35,7 +33,7 @@
                 <th>Estado</th>
                 <th>Prioridad</th>
                 <th>Fecha Límite</th>
-                <th>Progreso</th>
+                <th>Avance</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -63,18 +61,10 @@
                   <td data-label="Fecha Límite">
                     {{ tg.fecha_limite.strftime('%Y-%m-%d') if tg.fecha_limite else 'N/A' }}
                   </td>
-                  <td data-label="Progreso">
-                    {# Calculamos el porcentaje redondeado a entero #}
-                    {% set pct_tg = (
-                         (tg.porcentaje_avance if tg.porcentaje_avance is not none else tg.avance_automatico)
-                         | float
-                       ) | round(0) %}
+                  <td data-label="Avance">
+                    {% set pct_tg = tg.avance_automatico | float | round(0) %}
                     <div class="progress-bar-container">
-                      {# Si es 100% o más, usamos la clase “green-bar”. #}
-                      <div class="progress-bar {% if pct_tg >= 100 %}green-bar{% endif %}"
-                           style="width: {{ pct_tg }}%;"
-                      >
-                        {# Forzamos el porcentaje siempre centrado e en blanco #}
+                      <div class="progress-bar {% if pct_tg >= 100 %}green-bar{% endif %}" style="width: {{ pct_tg }}%;">
                         <span class="progress-text-inner">{{ pct_tg }}%</span>
                       </div>
                     </div>
@@ -82,10 +72,8 @@
                   <td data-label="Acciones">
                     <a href="{{ url_for('ver_tarea_general', tarea_general_id=tg.id) }}"
                        class="button btn-sm btn-info">
-                      <i class="material-icons-outlined">visibility</i>
-                      Ver Tarea
+                      <i class="material-icons-outlined">visibility</i> Ver Tarea
                     </a>
-                    {# Si quieres añadir botones de editar/eliminar, agrégalos aquí #}
                   </td>
                 </tr>
               {% endfor %}
@@ -141,11 +129,11 @@
     </div>
   </div>
 
-  <div class="back-to-dashboard-container button-group mt-4">
-    <a href="{{ url_for('dashboard') }}" class="button btn-secondary">
-      <i class="material-icons-outlined">arrow_back</i> Volver al Dashboard
-    </a>
-  </div>
+<div class="back-to-dashboard-container button-group mt-4">
+  <a href="javascript:window.history.back();" class="button btn-secondary">
+    <i class="material-icons-outlined">arrow_back</i> Volver
+  </a>
+</div>
 {% endblock %}
 
 {% block scripts %}

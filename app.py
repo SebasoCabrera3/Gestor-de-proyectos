@@ -10,6 +10,7 @@ from datetime import datetime, date
 from sqlalchemy.orm import joinedload # Import para optimizar consultas de relaciones
 from sqlalchemy import desc, asc, func # Asegúrate que db está inicializado en models.py y que las clases están bien definidas
 from models import db, User, Area, Project, TareaGeneral, Subtarea
+from forms import ValidarSubtareaForm
 from forms import (
     LoginForm, ApoyoRegisterForm,
     ProjectForm, TareaGeneralForm, SubtareaForm,
@@ -812,13 +813,16 @@ def ver_tarea_general(tarea_general_id):
     if current_user.role == 'apoyo':
         subtareas = [s for s in subtareas if s.assigned_user_id == current_user.id]
 
+    # 4) Capturar de dónde vino el usuario para botón "Volver"
+    back_url = request.referrer or url_for('dashboard')
+
     return render_template(
         'tarea_general_details.html',
         tarea_general=tarea_general,
         subtareas=subtareas,
-        es_retrasada_subtarea=es_retrasada_subtarea
+        es_retrasada_subtarea=es_retrasada_subtarea,
+        back_url=back_url
     )
-
 
 # -------------------------
 # Editar tarea general
@@ -843,11 +847,11 @@ def editar_tarea_general(tarea_general_id):
         tarea_general.description  = form.description.data
         tarea_general.fecha_limite = form.fecha_limite.data
         tarea_general.prioridad    = form.prioridad.data
+        tarea_general.area         = form.area_id.data
 
         # Si tu Form trae un campo area_id, asigna el nuevo Area:
-        nueva_area = Area.query.get(form.area_id.data)
-        if nueva_area:
-            tarea_general.area = nueva_area
+        tarea_general.area = form.area_id.data  # ✅ esto ya es un objeto Area
+
 
         db.session.commit()
         flash("Tarea general actualizada exitosamente.", "success")
@@ -1217,6 +1221,23 @@ def agregar_aporte_subtarea(subtarea_id):
             flash("Archivo no permitido.", "danger")
 
     return render_template('agregar_avance_subtarea.html', form=form, subtarea=subtarea)
+
+
+
+@app.route('/subtarea/<int:subtarea_id>/validar', methods=['GET', 'POST'])
+@login_required
+def validar_subtarea(subtarea_id):
+    subtarea = Subtarea.query.get_or_404(subtarea_id)
+    form = ValidarSubtareaForm(obj=subtarea)
+    
+    if form.validate_on_submit():
+        subtarea.avance_validado = form.avance_validado.data
+        subtarea.observaciones = form.observaciones.data
+        db.session.commit()
+        flash("Subtarea validada correctamente.", "success")
+        return redirect(url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id))
+
+    return render_template('validar_subtarea.html', form=form, subtarea=subtarea)
 
 
 

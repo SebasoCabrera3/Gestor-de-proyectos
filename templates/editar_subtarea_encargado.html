@@ -82,17 +82,6 @@
                     </ul>
                 {% endif %}
             </div>
-            <div class="form-group">
-                {{ form.status.label(class="form-label") }}
-                {{ form.status(class="form-control") }}
-                {% if form.status.errors %}
-                    <ul class="errors">
-                        {% for e in form.status.errors %}
-                            <li>{{ e }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
         </div>
 
         <div class="form-group">
@@ -148,248 +137,231 @@
 {% endblock %}
 
 {% block styles %}
-    {{ super() }}
-    <style>
-        /* Variables para espaciado (si no están en base.html o CSS global) */
-        :root {
-            --space-sm: 0.5rem;   /* 8px */
-            --space-md: 1rem;    /* 16px */
-            --space-lg: 2rem;    /* 32px */
-        }
+{{ super() }}
+<style>
+    :root {
+        --space-sm: 0.5rem;
+        --space-md: 1rem;
+        --space-lg: 2rem;
+    }
 
-        /* Contenedor principal del formulario */
-        .form-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: var(--space-lg);
-            background: #1e2533; /* Color de fondo similar a las tarjetas */
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            color: #e0e6f0;
-        }
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: var(--space-lg);
+        background: #1e2533;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        color: #e0e6f0;
+    }
 
-        .page-title {
-            margin-bottom: var(--space-md);
-            text-align: center;
-            color: #00d0ff; /* Título principal */
-        }
+    .page-title {
+        margin-bottom: var(--space-md);
+        text-align: center;
+        color: #00d0ff;
+    }
 
-        /* Metadatos (información de la subtarea, proyecto, etc.) */
-        .metadata {
-            margin-bottom: var(--space-lg);
-            background: #161c28; /* Un poco más oscuro */
-            padding: var(--space-md);
-            border-radius: 6px;
-            border: 1px solid #2c3340;
-        }
+    .metadata {
+        margin-bottom: var(--space-lg);
+        background: #161c28;
+        padding: var(--space-md);
+        border-radius: 6px;
+        border: 1px solid #2c3340;
+    }
 
-        .metadata p {
-            margin-bottom: 0.5rem;
-            color: #e0e6f0;
-        }
+    .metadata p {
+        margin-bottom: 0.5rem;
+        color: #e0e6f0;
+    }
 
-        .metadata p:last-child {
-            margin-bottom: 0;
-        }
+    .metadata strong {
+        color: #00d0ff;
+    }
 
-        .metadata strong {
-            color: #00d0ff; /* Color para las etiquetas en los metadatos */
-        }
+    .alert {
+        padding: var(--space-sm) var(--space-md);
+        border-radius: 4px;
+        margin-bottom: var(--space-md);
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        font-size: 0.95rem;
+    }
 
-        /* Alertas (para documento aportado o no) */
-        .alert {
-            padding: var(--space-sm) var(--space-md);
-            border-radius: 4px;
-            margin-bottom: var(--space-md);
-            display: flex;
-            align-items: center;
-            gap: var(--space-sm);
-            font-size: 0.95rem;
-        }
+    .alert-info {
+        background-color: #007bff40;
+        border: 1px solid #007bff;
+        color: #00d0ff;
+    }
 
-        .alert-info {
-            background-color: #007bff40; /* Azul con transparencia */
-            border: 1px solid #007bff;
-            color: #00d0ff;
-        }
+    .alert-warning {
+        background-color: #ffc10740;
+        border: 1px solid #ffc107;
+        color: #ffc107;
+    }
 
-        .alert-warning {
-            background-color: #ffc10740; /* Amarillo con transparencia */
-            border: 1px solid #ffc107;
-            color: #ffc107;
-        }
+    .alert p {
+        margin: 0;
+    }
 
-        .alert p {
-            margin: 0;
-        }
+    .form-basic {
+        margin-top: var(--space-lg);
+    }
 
-        .alert .material-icons-outlined {
-            font-size: 1.2rem;
-        }
+    .form-group {
+        margin-bottom: var(--space-md);
+    }
 
-        /* Formulario general */
-        .form-basic {
-            margin-top: var(--space-lg);
-            padding: 0; /* Asegura que no haya padding extra en el formulario */
-        }
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #00d0ff;
+    }
 
-        .form-group {
-            margin-bottom: var(--space-md);
-        }
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #2c3340;
+        border-radius: 4px;
+        background-color: #161c28;
+        color: #e0e6f0;
+        box-sizing: border-box;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
 
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #00d0ff; /* Color de las etiquetas de los campos */
-        }
+    .form-control:focus {
+        border-color: #00d0ff;
+        box-shadow: 0 0 0 0.15rem rgba(0, 208, 255, 0.25);
+        outline: none;
+    }
 
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #2c3340; /* Borde oscuro */
-            border-radius: 4px;
-            background-color: #161c28; /* Fondo más oscuro para inputs */
-            color: #e0e6f0; /* Color del texto del input */
-            box-sizing: border-box; /* Asegura que el padding no aumente el ancho total */
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
+    .form-control[type="date"] {
+        appearance: none;
+        -webkit-appearance: none;
+    }
 
-        .form-control:focus {
-            border-color: #00d0ff; /* Borde azul al enfocar */
-            box-shadow: 0 0 0 0.15rem rgba(0, 208, 255, 0.25); /* Sombra azul al enfocar */
-            outline: none;
-        }
+    .form-row {
+        display: flex;
+        gap: var(--space-md);
+        margin-bottom: var(--space-md);
+        flex-wrap: wrap;
+    }
 
-        .form-control[type="date"] {
-            /* Ajustes específicos para inputs de tipo fecha */
-            appearance: none;
-            -webkit-appearance: none;
-        }
+    .form-row .form-group {
+        flex: 1;
+        min-width: 150px;
+        margin-bottom: 0;
+    }
 
-        /* Fila de formulario (para elementos lado a lado) */
+    ul.errors {
+        color: #FF5252;
+        list-style-type: none;
+        padding-left: 0;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .form-divider {
+        border: 0;
+        height: 1px;
+        background: #2c3340;
+        margin: var(--space-lg) 0;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        margin-bottom: var(--space-md);
+        color: #00d0ff;
+    }
+
+    .input-with-suffix {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+    }
+
+    .input-with-suffix .form-control {
+        width: 80px;
+        flex-grow: 0;
+    }
+
+    .input-with-suffix .suffix {
+        color: #e0e6f0;
+        font-weight: 600;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--space-md);
+        margin-top: var(--space-lg);
+        flex-wrap: wrap;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        text-align: center;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+    }
+
+    .text-link {
+        color: #00d0ff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .text-link:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
         .form-row {
-            display: flex;
-            gap: var(--space-md);
-            margin-bottom: var(--space-md);
-            flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
+            flex-direction: column;
         }
 
         .form-row .form-group {
-            flex: 1; /* Distribuye el espacio equitativamente */
-            min-width: 150px; /* Ancho mínimo para que no se compriman demasiado */
-            margin-bottom: 0; /* Quita el margen inferior duplicado si ya lo tiene el form-row */
+            min-width: 100%;
         }
 
-        /* Errores de validación */
-        ul.errors {
-            color: #FF5252; /* Rojo para errores */
-            list-style-type: none;
-            padding-left: 0;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        /* Separador */
-        .form-divider {
-            border: 0;
-            height: 1px;
-            background: #2c3340; /* Línea delgada y oscura */
-            margin: var(--space-lg) 0;
-        }
-
-        .section-title {
-            font-size: 1.25rem;
-            margin-bottom: var(--space-md);
-            color: #00d0ff; /* Título de sección */
-        }
-
-        /* Input con sufijo (ej. para el %) */
-        .input-with-suffix {
-            display: flex;
-            align-items: center;
-            gap: var(--space-sm);
-        }
-
-        .input-with-suffix .form-control {
-            width: 80px; /* Ancho fijo para el campo de porcentaje */
-            flex-grow: 0; /* No permite que crezca */
-        }
-
-        .input-with-suffix .suffix {
-            color: #e0e6f0;
-            font-weight: 600;
-        }
-
-        /* Acciones del formulario (botones) */
         .form-actions {
-            display: flex;
-            justify-content: flex-end; /* Alinea los botones a la derecha */
-            gap: var(--space-md);
-            margin-top: var(--space-lg);
-            flex-wrap: wrap;
+            flex-direction: column;
+            align-items: stretch;
         }
 
-        /* Estilos de botones (asumiendo que ya tienes estos en tu CSS global o base.html) */
         .button {
-            display: inline-block;
-            padding: 0.6rem 1.2rem; /* Ligeramente más grande */
-            font-size: 1rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            transition: background-color 0.2s ease, transform 0.1s ease;
+            width: 100%;
         }
-
-        .btn-primary {
-            background-color: #007bff; /* Azul */
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background-color: #6c757d; /* Gris */
-            color: white;
-        }
-        .btn-secondary:hover {
-            background-color: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        .text-link {
-            color: #00d0ff; /* Azul claro */
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .text-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Media queries para responsividad */
-        @media (max-width: 600px) {
-            .form-row {
-                flex-direction: column; /* Apila los campos en columnas en pantallas pequeñas */
-            }
-            .form-row .form-group {
-                min-width: 100%; /* Ocupa todo el ancho */
-            }
-            .form-actions {
-                flex-direction: column;
-                align-items: stretch; /* Estira los botones para que ocupen todo el ancho */
-            }
-            .button {
-                width: 100%; /* Botones de ancho completo */
-            }
-        }
-    </style>
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }}
-    {# Si necesitas algún script específico para el formulario (ej. validación JS en cliente, datepicker) #}
+{{ super() }}
 {% endblock %}

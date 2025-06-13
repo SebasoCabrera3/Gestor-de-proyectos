@@ -1,286 +1,134 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bienvenidos – Gestor de Proyectos</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gestor de Proyectos GPE</title>
 
-  <!-- Google Fonts: Montserrat -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&display=swap"
-    rel="stylesheet"
-  />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
 
-  <!-- Estilos Internos -->
-  <style>
-    /* — Reset básico y variables de color — */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    :root {
-      --font-base: 'Montserrat', sans-serif;
-      --color-background: #0d1117;
-      --color-overlay: rgb(7 22 41 / 85%);
-      --color-dark-blue: #001f3f;
-      --color-white: #ffffff;
-      --transition-fast: 0.3s ease-in-out;
-      --transition-slow: 1.2s ease;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: var(--font-base);
-      background: url('{{ url_for("static", filename="images/deep-space-overlay.jpg") }}')
-                  center/cover no-repeat fixed;
-      background-color: var(--color-background);
-    }
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet" />
 
-    /* — Capa de oscurecimiento ligeramente transparente — */
-    #dark-overlay {
-      position: absolute;
-      inset: 0;
-      background-color: var(--color-overlay);
-      opacity: 1;
-      transition: opacity var(--transition-slow);
-      z-index: 1;
-    }
-    #dark-overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    /* — Contenedor principal de la landing — */
-    #landing-wrapper {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      z-index: 2;
-      opacity: 0;
-      transition: opacity var(--transition-slow) 0.5s;
-    }
-    #landing-wrapper.visible {
-      opacity: 1;
-    }
-
-    /* — Logo con animación sutil — */
-    .logo {
-      width: 260px;
-      animation: pulse-logo 3s ease-in-out infinite alternate;
-      filter: drop-shadow(0 0 10px var(--color-dark-blue));
-      margin-bottom: 1.5rem;
-    }
-    @keyframes pulse-logo {
-      from {
-        transform: scale(1);
-      }
-      to {
-        transform: scale(1.03);
-      }
-    }
-
-    /* — Título en blanco con contorno usando text-shadow en varias direcciones — */
-    .landing-title {
-      font-size: 3rem;
-      font-weight: 800;
-      color: var(--color-white);
-      /* Sombras alrededor: arriba-izq, arriba-der, abajo-izq, abajo-der */
-      text-shadow:
-        -2px -2px 0 var(--color-dark-blue),
-        2px -2px 0 var(--color-dark-blue),
-        -2px 2px 0 var(--color-dark-blue),
-        2px 2px 0 var(--color-dark-blue);
-      margin-bottom: 0.8rem;
-      opacity: 0;
-      animation: fade-in 1.2s ease-out forwards;
-    }
-
-    /* — Subtítulo en blanco con contorno sutil también mediante text-shadow — */
-    .landing-subtitle {
-      font-size: 1.1rem;
-      font-weight: 400;
-      color: var(--color-white);
-      text-shadow:
-        -1px -1px 0 var(--color-dark-blue),
-        1px -1px 0 var(--color-dark-blue),
-        -1px 1px 0 var(--color-dark-blue),
-        1px 1px 0 var(--color-dark-blue);
-      margin-bottom: 1.8rem;
-      opacity: 0;
-      animation: fade-up 1.2s ease-out forwards;
-      animation-delay: 0.3s;
-    }
-
-    @keyframes fade-in {
-      from {
-        opacity: 0;
-        transform: translateY(-8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    @keyframes fade-up {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* — Botón “Gestionar” blanco con borde azul oscuro y fondo semitransparente — */
-    .landing-button {
-      position: relative;
-      display: inline-block;
-      padding: 0.7rem 2.2rem;
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--color-white);
-      background-color: rgba(0, 0, 0, 0.3);
-      border: 2px solid var(--color-dark-blue);
-      border-radius: 30px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform var(--transition-fast),
-                  box-shadow var(--transition-fast),
-                  background-color var(--transition-fast);
-      z-index: 3;
-    }
-    .landing-button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 0 12px var(--color-dark-blue);
-      background-color: rgba(0, 0, 0, 0.5);
-    }
-    .landing-button::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
-      z-index: 1;
-    }
-    .landing-button:active::after {
-      width: 160px;
-      height: 160px;
-      opacity: 0;
-      transition: 0s;
-    }
-
-    /* — Splash inicial “Bienvenidos” en blanco con contorno — */
-    #splash-text {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3.2rem;
-      font-weight: 800;
-      color: var(--color-white);
-      text-shadow:
-        -2px -2px 0 var(--color-dark-blue),
-        2px -2px 0 var(--color-dark-blue),
-        -2px 2px 0 var(--color-dark-blue),
-        2px 2px 0 var(--color-dark-blue);
-      z-index: 3;
-      opacity: 1;
-      transition: opacity var(--transition-slow);
-    }
-    #splash-text.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    /* — Responsive adjustments — */
-    @media (max-width: 768px) {
-      .logo {
-        width: 200px;
-      }
-      .landing-title {
-        font-size: 2.4rem;
-      }
-      .landing-subtitle {
-        font-size: 1rem;
-      }
-      .landing-button {
-        padding: 0.6rem 1.8rem;
-        font-size: 0.9rem;
-      }
-      #splash-text {
-        font-size: 2.6rem;
-      }
-    }
-    @media (max-width: 480px) {
-      .logo {
-        width: 160px;
-      }
-      .landing-title {
-        font-size: 2rem;
-      }
-      .landing-subtitle {
-        font-size: 0.9rem;
-      }
-      .landing-button {
-        padding: 0.5rem 1.5rem;
-        font-size: 0.85rem;
-      }
-      #splash-text {
-        font-size: 2.2rem;
-      }
-    }
-  </style>
+    <style>
+        :root {
+            --font-base: 'Montserrat', sans-serif;
+            --color-background: #0b0f1a;
+            --color-overlay: rgba(5, 15, 30, 0.88);
+            --color-blue-glow: #00cfff;
+            --color-deep-blue: #00a2c7;
+            --color-white: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: var(--font-base);
+            background: url('{{ url_for("static", filename="images/deep-space-overlay.jpg") }}') center/cover no-repeat fixed;
+            background-color: var(--color-background);
+            overflow: hidden;
+            cursor: default;
+        }
+        #particles-js { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; }
+        #overlay { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 20%, var(--color-overlay) 75%); z-index: 2; }
+        #splash-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10; perspective: 800px; }
+        #splash-text h1 { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 800; color: var(--color-white); text-shadow: 0 0 10px rgba(0, 207, 255, 0.7), 0 0 25px rgba(0, 207, 255, 0.5); display: flex; transform-style: preserve-3d; }
+        #splash-text .letter { display: inline-block; transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease-out; }
+        #splash-text.hidden .letter { opacity: 0; }
+        #landing-wrapper { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 5; perspective: 1500px; opacity: 0; visibility: hidden; transition: opacity 0.5s ease-in, visibility 0.5s; }
+        #landing-wrapper.visible { opacity: 1; visibility: visible; }
+        .interactive-card { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 2rem; transform-style: preserve-3d; transform: rotateX(-30deg) scale(0.95); transition: transform 1.2s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        #landing-wrapper.visible .interactive-card { transform: rotateX(0deg) scale(1); }
+        #landing-wrapper.visible .interactive-card.tilt { transition: none; }
+        .logo, .landing-title, .landing-subtitle, .landing-button { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease 0.5s, transform 0.8s ease 0.5s; }
+        #landing-wrapper.visible .logo, #landing-wrapper.visible .landing-title, #landing-wrapper.visible .landing-subtitle, #landing-wrapper.visible .landing-button { opacity: 1; transform: translateY(0); }
+        .logo { width: clamp(180px, 30vw, 240px); margin-bottom: 1.5rem; filter: drop-shadow(0 0 20px var(--color-blue-glow)); animation: pulse 4s ease-in-out infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); filter: drop-shadow(0 0 20px var(--color-blue-glow)); } to { transform: scale(1.05); filter: drop-shadow(0 0 30px var(--color-deep-blue)); } }
+        .landing-title { font-size: clamp(2.5rem, 7vw, 3.5rem); font-weight: 800; color: var(--color-white); text-shadow: 0 0 15px var(--color-blue-glow); margin-bottom: 1rem; transition-delay: 0.6s; }
+        .landing-subtitle { font-size: clamp(1.1rem, 4vw, 1.4rem); color: var(--color-white); opacity: 0; margin-bottom: 2.5rem; transition-delay: 0.7s; }
+        .landing-button { padding: 0.9rem 2.7rem; border: 2px solid var(--color-blue-glow); border-radius: 50px; background: rgba(0, 207, 255, 0.05); backdrop-filter: blur(4px); color: var(--color-white); font-size: 1.15rem; font-weight: 600; text-decoration: none; letter-spacing: 1px; transition: all 0.3s ease-in-out; transition-delay: 0.8s; }
+        .landing-button:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 0 30px var(--color-blue-glow), inset 0 0 10px rgba(0, 207, 255, 0.3); background-color: rgba(0, 207, 255, 0.15); text-shadow: 0 0 8px var(--color-white); }
+    </style>
 </head>
 <body>
-  <!-- Splash inicial -->
-  <div id="splash-text">Bienvenidos</div>
+    <div id="particles-js"></div>
+    <div id="overlay"></div>
+    <div id="splash-text">
+        <h1 data-text="Bienvenidos"></h1>
+    </div>
 
-  <!-- Capa oscura semitransparente -->
-  <div id="dark-overlay"></div>
+    <div id="landing-wrapper">
+        <div class="interactive-card">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo del sistema" class="logo">
+            <h1 class="landing-title">Gestor de Proyectos</h1>
+            <p class="landing-subtitle">Organiza y ejecuta tus proyectos.</p>
+            <a href="{{ url_for('roles') }}" class="landing-button">Ingresar al Sistema</a>
+        </div>
+    </div>
 
-  <!-- Contenido de la Landing -->
-  <div id="landing-wrapper">
-    <!-- Logo animado -->
-    <img
-      src="{{ url_for('static', filename='images/logo.png') }}"
-      alt="Logo del sistema"
-      class="logo"
-    />
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const splashContainer = document.getElementById('splash-text');
+            const splashText = splashContainer.querySelector('h1');
+            const landingWrapper = document.getElementById('landing-wrapper');
+            const card = document.querySelector('.interactive-card');
 
-    <!-- Título en blanco con contorno azul oscuro -->
-    <h1 class="landing-title">Gestor de Proyectos</h1>
-    <!-- Subtítulo en blanco con contorno sutil -->
-    <p class="landing-subtitle">
-      ¡Explora tus proyectos de manera sencilla y eficiente!
-    </p>
+            // 1. Preparar la animación del texto de bienvenida
+            const text = splashText.dataset.text;
+            splashText.innerHTML = '';
+            text.split('').forEach(letter => {
+                const span = document.createElement('span');
+                span.className = 'letter';
+                span.innerText = letter === ' ' ? '\u00A0' : letter;
+                splashText.appendChild(span);
+            });
 
-    <!-- Botón de acción -->
-    <a href="{{ url_for('roles') }}" class="landing-button">Gestionar</a>
-  </div>
+            // 2. Inicialización de Particles.js
+            particlesJS('particles-js', {
+                 particles: { number: { value: 100, density: { enable: true, value_area: 800 } }, color: { value: '#00cfff' }, shape: { type: 'circle' }, opacity: { value: 0.6, random: true, anim: { enable: true, speed: 1, opacity_min: 0.1, sync: false } }, size: { value: 2.5, random: true }, line_linked: { enable: true, distance: 150, color: '#00a2c7', opacity: 0.3, width: 1 }, move: { enable: true, speed: 1.5, direction: 'none', random: true, straight: false, out_mode: 'out' } }, interactivity: { detect_on: 'canvas', events: { onhover: { enable: true, mode: 'grab' }, onclick: { enable: true, mode: 'push' } }, modes: { grab: { distance: 140, line_opacity: 0.7 }, push: { particles_nb: 4 } } }, retina_detect: true 
+            });
 
-  <!-- Scripts de activación de animaciones -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Tras 2 segundos: ocultar texto splash y revelar landing
-      setTimeout(() => {
-        document.getElementById('splash-text').classList.add('hidden');
-        document.getElementById('landing-wrapper').classList.add('visible');
-      }, 2000);
-    });
-  </script>
+            // 3. Iniciar la secuencia de animación
+            setTimeout(() => {
+                const letters = document.querySelectorAll('#splash-text .letter');
+                letters.forEach(letter => {
+                    const rotY = (Math.random() - 0.5) * 180;
+                    const rotZ = (Math.random() - 0.5) * 90;
+                    letter.style.transform = `translateZ(-300px) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+                });
+                
+                splashContainer.classList.add('hidden');
+
+                letters[letters.length - 1].addEventListener('transitionend', () => {
+                    // --- LA LÍNEA CLAVE DE LA CORRECCIÓN ---
+                    // Elimina el contenedor fantasma para liberar los clics.
+                    splashContainer.style.display = 'none'; 
+                    
+                    landingWrapper.classList.add('visible');
+                }, { once: true });
+
+            }, 2000);
+
+            // 4. Efecto 3D Tilt
+            landingWrapper.addEventListener('mousemove', (e) => {
+                if (landingWrapper.classList.contains('visible')) {
+                    if(!card.classList.contains('tilt')) card.classList.add('tilt');
+                    const { left, top, width, height } = landingWrapper.getBoundingClientRect();
+                    const mouseX = e.clientX - left;
+                    const mouseY = e.clientY - top;
+                    const rotateX = ((mouseY / height) - 0.5) * -15;
+                    const rotateY = ((mouseX / width) - 0.5) * 15;
+                    card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                }
+            });
+
+            landingWrapper.addEventListener('mouseleave', () => {
+                card.classList.remove('tilt');
+                card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+            });
+        });
+    </script>
 </body>
 </html>

@@ -110,7 +110,7 @@ gestor-proyectos/
 **Sebastián Cabrera**  
 Estudiante de Arquitectura (noveno semestre)  
 Pasantía en Movilidad Futura  
-Email: tu_correo@ejemplo.com  
+Email: jaircabrera@unimayor.edu.co 
 
 © 2025 Sebastián Cabrera. Todos los derechos reservados.
 

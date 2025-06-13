@@ -1,73 +1,156 @@
-{# templates/editar_subtarea_avance.html #}
 {% extends "base.html" %}
+
+{% block title %}Subir Avance/Aporte: {{ subtarea.title }}{% endblock %}
+
 {% block content %}
-  <h1 class="page-title">Subir Avance/Aporte: {{ subtarea.title }}</h1>
-  <p class="page-subtitle">
-    Proyecto:
-    <a href="{{ url_for('ver_proyecto', project_id=subtarea.tarea_general.project.id) }}">
-      {{ subtarea.tarea_general.project.name }}
-    </a>
-    |
-    Tarea General:
-    <a href="{{ url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id) }}">
-      {{ subtarea.tarea_general.title }}
-    </a>
+<div class="form-container fade-in">
+  <h1 class="page-title gradient-text">Subir Avance o Documento</h1>
+
+  <p class="project-subtitle">
+    <strong>Subtarea:</strong> {{ subtarea.title }}
+  </p>
+  <p class="text-muted">
+    <strong>Proyecto:</strong> {{ subtarea.tarea_general.project.name }}<br>
+    <strong>Tarea General:</strong> {{ subtarea.tarea_general.title }}
   </p>
 
-  <div class="card neon-border mt-3">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} animate-pulse">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="card shadow-lg">
     <div class="card-body">
       <form method="POST" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
 
-        {# —============== Avance (%) ==============— #}
         <div class="form-group mb-4">
-          {{ form.avance.label(class="form-label") }}
-          {{ form.avance(
-              class="custom-number",
-              min="0", max="100", step="1",
-              placeholder="0–100"
-          ) }}
+          <label class="form-label" for="avanceInput">📈 Avance (%):</label>
+          {{ form.avance(class="form-control custom-number", id="avanceInput", min="0", max="100", step="1", placeholder="0–100") }}
         </div>
 
-        {# —========== Documento de evidencia ==========— #}
-        <div class="form-group mb-4 file-wrapper">
-          {# El input real, invisible #}
-          {{ form.documento(class="custom-file-input", id="fileInput") }}
-          {# La etiqueta que actuará como botón #}
-          <label for="fileInput" class="custom-file-label">Seleccionar archivo</label>
-          {# Lugar donde mostraremos el nombre seleccionado #}
-          <span id="file-name-display" class="file-name">
-            {% if subtarea.documento_aporte %}
-              Archivo actual: {{ subtarea.documento_aporte }}
-            {% endif %}
-          </span>
+        <div class="form-group mb-4">
+          <label class="form-label" for="fileInput">📎 Documento de Aporte:</label>
+
+          <div class="custom-file-wrapper">
+            <label for="fileInput" class="custom-file-label-button">
+              📤 Seleccionar archivo
+            </label>
+            {{ form.documento(class="form-control-file", id="fileInput", style="display: none;") }}
+
+            <span id="file-name-display" class="file-name-text">
+              {% if subtarea.documento_aporte %}
+                📄 <strong>Archivo actual:</strong>
+                <a href="{{ url_for('uploaded_file', filename=subtarea.documento_aporte) }}"
+                   target="_blank" class="text-link">
+                  {{ subtarea.documento_aporte }}
+                </a>
+              {% else %}
+                No se ha subido ningún archivo aún.
+              {% endif %}
+            </span>
+          </div>
         </div>
 
-        <div class="mt-4">
-          <button type="submit" class="button btn-primary">{{ form.submit.label.text }}</button>
-          <a href="{{ url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id) }}"
-             class="button btn-secondary">Cancelar</a>
+        <div class="button-group text-center mt-4">
+          <button type="submit" class="button btn-primary">
+            {{ form.submit.label.text or 'Subir Aporte' }}
+          </button>
+          {% if current_user.role == 'apoyo' %}
+            <a href="{{ url_for('dashboard') }}" class="button btn-secondary">Cancelar</a>
+          {% else %}
+            <a href="{{ url_for('ver_tarea_general', tarea_general_id=subtarea.tarea_general.id) }}" class="button btn-secondary">Cancelar</a>
+          {% endif %}
         </div>
       </form>
     </div>
   </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+  .form-container {
+    max-width: 700px;
+    margin: 2rem auto;
+    padding: 1rem;
+  }
+
+  .page-title.gradient-text {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, #00d0ff, #007bff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .custom-file-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .custom-file-label-button {
+    background-color: #007bff;
+    color: white;
+    padding: 0.6rem 1.3rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: background-color 0.2s ease;
+    text-transform: uppercase;
+  }
+
+  .custom-file-label-button:hover {
+    background-color: #0056b3;
+  }
+
+  .file-name-text {
+    font-size: 0.875rem;
+    color: #ccc;
+  }
+
+  .file-name-text a.text-link {
+    color: #00d0ff;
+    text-decoration: none;
+  }
+
+  .file-name-text a.text-link:hover {
+    text-decoration: underline;
+  }
+
+  .button-group .button {
+    margin: 0 0.5rem;
+  }
+</style>
 {% endblock %}
 
 {% block scripts %}
-  {{ super() }}
-  <script>
-    // Cuando el usuario seleccione un archivo, actualizamos el texto del <span>
-    document.addEventListener('DOMContentLoaded', function() {
-      const fileInput = document.getElementById('fileInput');
-      const fileNameDisplay = document.getElementById('file-name-display');
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('fileInput');
+    const fileNameDisplay = document.getElementById('file-name-display');
 
-      fileInput.addEventListener('change', function() {
-        if (fileInput.files && fileInput.files.length > 0) {
-          fileNameDisplay.textContent = fileInput.files[0].name;
-        } else {
-          fileNameDisplay.textContent = ''; // O "Ningún archivo seleccionado"
-        }
-      });
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files && fileInput.files.length > 0) {
+        fileNameDisplay.innerHTML =
+          '📄 <strong>Archivo seleccionado:</strong> ' + fileInput.files[0].name;
+      } else {
+        fileNameDisplay.textContent = 'No se ha seleccionado ningún archivo.';
+      }
     });
-  </script>
+  });
+</script>
 {% endblock %}

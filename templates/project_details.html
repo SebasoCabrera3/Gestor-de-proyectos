@@ -30,9 +30,9 @@
               <tr>
                 <th>Estado:</th>
                 <td>
-                  <span class="status-badge status-{{ project.status|lower|replace(' ', '-') }}{% if project.is_delayed %} status-retrasada-oro{% endif %}">
-                    {{ project.current_display_status }}
-                  </span>
+<span class="status-badge status-{{ project.estado|lower|replace(' ', '-') }}">
+  {{ project.estado }}
+</span>
                 </td>
               </tr>
               <tr>
@@ -274,6 +274,7 @@
     .status-finalizado   { background-color: #28a745; }
     .status-suspendido   { background-color: #6c757d; }
     .status-cancelado    { background-color: #dc3545; }
+    
 
     /* =========================== */
     /* BOTONES Y OTROS             */

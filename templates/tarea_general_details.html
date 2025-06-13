@@ -85,11 +85,11 @@
             {# Solo supervisor puede editar/eliminar #}
             {% if current_user.role == 'supervisor' %}
               <a href="{{ url_for('editar_tarea_general', tarea_general_id=tarea_general.id) }}"
-                 class="button btn-primary">Editar TG</a>
+                 class="button btn-primary">Editar</a>
               <form action="{{ url_for('eliminar_tarea_general', tarea_general_id=tarea_general.id) }}"
                     method="POST" style="display:inline;"
                     onsubmit="return confirm('¿Eliminar esta Tarea General?');">
-                <button type="submit" class="button btn-danger">Eliminar TG</button>
+                <button type="submit" class="button btn-danger">Eliminar</button>
               </form>
             {% endif %}
 
@@ -128,8 +128,8 @@
                         <a href="{{ url_for('ver_subtarea', subtarea_id=s.id) }}">{{ s.title }}</a>
                       </td>
                       <td>
-                        <span class="status-badge status-{{ s.status|lower|replace(' ', '-') }}">
-                          {{ s.status }}
+                        <span class="status-badge status-{{ s.estado|lower|replace(' ', '-') }}">
+                          {{ s.estado }}
                         </span>
                       </td>
                       <td>
@@ -156,7 +156,7 @@
 
                           {% elif current_user.role == 'encargado' and current_user.area_id == tarea_general.area_id %}
                             {% if s.documento_aporte %}
-                              <a href="{{ url_for('editar_subtarea', subtarea_id=s.id) }}"
+                              <a href="{{ url_for('validar_subtarea', subtarea_id=s.id) }}"
                                  class="button btn-sm btn-info">Validar</a>
                             {% else %}
                               <a href="{{ url_for('ver_subtarea', subtarea_id=s.id) }}"

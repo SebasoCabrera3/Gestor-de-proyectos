@@ -219,8 +219,8 @@ form select option { background-color: var(--color-card-bg); color: var(--color-
 /* --- d. Tablas --- */
 .table-wrapper { overflow-x: auto; overflow-y: auto; max-height: 600px; margin: var(--space-lg) 0; background-color: transparent; border-radius: var(--border-radius-medium); border: 1px solid var(--color-border-subtle); }
 .data-table, table { width: 100%; border-collapse: collapse; table-layout: auto; background-color: transparent; color: var(--color-text-primary); font-family: 'Montserrat', sans-serif; font-size: 0.9em; }
-.data-table th, .data-table td { padding: var(--space-sm) var(--space-md); border: 1px solid var(--color-border-medium); text-align: left; vertical-align: middle; white-space: normal; overflow-wrap: break-word; }
-.data-table th { background-color: rgba(0, 128, 255, 0.1); font-weight: 700; color: var(--color-accent-blue-vibrant); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; position: sticky; top: 0; z-index: 10; /* Para que cabeceras se mantengan visibles al hacer scroll vertical dentro del wrapper */ }
+.data-table th, .data-table td { padding: var(--space-sm) var(--space-md); border: 1px solid var(--color-border-medium); text-align: center; vertical-align: middle; white-space: normal; overflow-wrap: break-word; }
+.data-table th {   background-color: rgb(19 46 72);font-weight: 700; color: var(--color-accent-blue-vibrant); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; position: sticky; top: 0; z-index: 10; /* Para que cabeceras se mantengan visibles al hacer scroll vertical dentro del wrapper */ }
 .data-table td { color: var(--color-text-secondary); }
 .data-table tr:hover td { background-color: var(--color-interactive-hover-bg); color: var(--color-text-highlight); box-shadow: inset 0 0 10px rgba(0, 216, 255, 0.1); /* Sutil brillo en hover de fila */ }
 .data-table td .button { margin: var(--space-xs) var(--space-xs); padding: var(--space-sm); font-size: 0.9em; line-height: 1; min-width: auto; vertical-align: middle; }
@@ -325,13 +325,67 @@ table.project-info-table .progress-bar-container { margin-top: var(--space-xs); 
 .detail-list dd, .detail-list .detail-value { color: var(--color-text-primary); word-break: break-word; text-align: left; }
 .detail-list dd .status-badge, .detail-list .detail-value .status-badge { vertical-align: middle; }
 
-/* --- i. Barras de Progreso --- */
-.progress-bar-container { width: 100%; background-color: rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-small); overflow: hidden; position: relative; height: 24px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
-.progress-bar { height: 100%; background-color: var(--color-accent-blue-vibrant); border-radius: var(--border-radius-small); transition: width var(--transition-duration-medium) ease-in-out; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-.progress-bar.green-bar { background-color: var(--color-accent-green-energetic); }
-.progress-text-inner { font-size: 0.85em; font-weight: 700; color: var(--color-bg-deep-space); line-height: 1; white-space: nowrap; }
-.progress-text, .progress-text-outer { position: absolute; left: var(--space-sm); top: 50%; transform: translateY(-50%); font-size: 0.85em; font-weight: 600; color: var(--color-text-primary); line-height: 1; z-index: 2; white-space: nowrap; }
-.progress-text-outer { margin-left: var(--space-xs); }
+/* --- i. Barras de Progreso Mejoradas --- */
+.progress-bar-container {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(0, 128, 255, 0.08));
+    border-radius: var(--border-radius-medium);
+    overflow: hidden;
+    position: relative;
+    height: 26px;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(4px);
+    transition: all 0.3s ease-in-out;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--color-accent-blue-vibrant), var(--color-accent-green-energetic));
+    border-radius: var(--border-radius-medium);
+    transition: width var(--transition-duration-medium) ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.15);
+}
+
+.progress-bar.green-bar {
+    background: linear-gradient(to right, #2ecc71, #27ae60);
+}
+
+.progress-text-inner {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--color-bg-deep-space);
+    text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+    white-space: nowrap;
+    z-index: 2;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.progress-text,
+.progress-text-outer {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1;
+    z-index: 2;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+.progress-text-outer {
+    margin-left: 0;
+}
 
 /* --- j. Barra de Filtros --- */
 .filter-bar { display: flex; flex-wrap: wrap; gap: var(--space-md); padding: var(--space-md); margin-bottom: var(--space-lg); align-items: flex-end; }
@@ -576,3 +630,5 @@ input[type=number] {
     padding: 0.6rem 1rem;
   }
 }
+
+
